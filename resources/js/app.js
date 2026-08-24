@@ -2,7 +2,7 @@ import { createIcons, icons } from 'lucide';
 
 createIcons({ icons, attrs: { 'stroke-width': 1.8 } });
 
-document.querySelectorAll('[data-file]').forEach((slot) => {
+const loadMediaSlot = (slot) => {
     const file = slot.dataset.file;
     if (!file) return;
     const image = new Image();
@@ -11,7 +11,18 @@ document.querySelectorAll('[data-file]').forEach((slot) => {
         slot.classList.add('loaded');
     };
     image.src = `/media/${file}`;
-});
+};
+
+const mediaSlots = document.querySelectorAll('[data-file]');
+if (!('IntersectionObserver' in window)) mediaSlots.forEach(loadMediaSlot);
+else {
+    const mediaObserver = new IntersectionObserver((entries) => entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        loadMediaSlot(entry.target);
+        mediaObserver.unobserve(entry.target);
+    }), { rootMargin: '500px 0px' });
+    mediaSlots.forEach(slot => mediaObserver.observe(slot));
+}
 
 const header = document.querySelector('[data-header]');
 const menuToggle = document.querySelector('.menu-toggle');

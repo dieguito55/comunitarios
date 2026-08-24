@@ -126,15 +126,17 @@ svg { display: block; }
 
 .hero { position: relative; min-height: 438px; margin-top: 61px; overflow: hidden; color: #fff; background: var(--navy); }
 .hero-media { position: absolute; top: 0; right: 24%; bottom: 0; left: 31%; background-position: center 27%; background-repeat: no-repeat; background-size: cover; }
+.hero-media img { width: 100%; height: 100%; object-fit: cover; object-position: center 27%; }
 .hero-overlay { position: absolute; inset: 0; z-index: 1; background: linear-gradient(90deg,var(--navy-deep) 0%,rgba(3,29,53,.98) 27%,rgba(3,29,53,.22) 40%,rgba(3,29,53,0) 67%,rgba(3,29,53,.56) 76%,var(--navy-deep) 100%),linear-gradient(0deg,rgba(3,29,53,.31),transparent 48%); }
 .hero-media > span { top: 74px; right: 48%; bottom: auto; }
 .hero-arc { position: absolute; z-index: 2; top: 18px; right: -90px; width: 670px; height: 300px; border: 1px solid rgba(245,172,24,.66); border-radius: 50%; transform: rotate(-5deg); }
 .hero-layout { position: relative; z-index: 3; display: grid; min-height: 438px; grid-template-columns: minmax(0,1fr) 282px; align-items: center; gap: 86px; padding-block: 31px 72px; }
 .hero-copy { max-width: 515px; }
+.hero-identity { margin: 0 0 12px; color: var(--yellow); font-size: .7rem; font-weight: 800; letter-spacing: .12em; line-height: 1.35; }
 .hero h1 { margin: 0; font-size: clamp(2.7rem,4.6vw,4.2rem); font-weight: 800; letter-spacing: -.055em; line-height: .98; }
 .hero h1 em { position: relative; color: #ff5b54; font-family: 'Caveat', cursive; font-size: 1.12em; font-weight: 700; letter-spacing: -.02em; }
 .hand-underline { width: 325px; height: 17px; margin: 1px 0 15px; border-top: 4px solid var(--yellow); border-radius: 50%; transform: rotate(-1deg); }
-.hero-copy > p { max-width: 420px; margin: 0; color: rgba(255,255,255,.9); font-size: .91rem; line-height: 1.62; }
+.hero-copy > p:not(.hero-identity) { max-width: 420px; margin: 0; color: rgba(255,255,255,.9); font-size: .91rem; line-height: 1.62; }
 .hero-actions { display: flex; gap: 14px; margin-top: 25px; }
 .play-mini { display: grid; width: 24px; height: 24px; place-items: center; border: 1.5px solid #fff; border-radius: 50%; }
 .play-mini svg { width: 11px; }

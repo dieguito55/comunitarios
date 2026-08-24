@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+    <url>
+        <loc>https://comunitarios.org/</loc>
+        <lastmod>2026-08-23</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>1.0</priority>
+        <image:image>
+            <image:loc>https://comunitarios.org/media/comunitarios-fundacion-territorial-puno.jpg</image:loc>
+            <image:title>Comunitarios — Fundación Territorial de Puno</image:title>
+            <image:caption>Participantes de Comunitarios trabajando juntos para transformar Puno.</image:caption>
+        </image:image>
+    </url>
+</urlset>
