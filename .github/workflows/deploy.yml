@@ -1,0 +1,176 @@
+name: Deploy comunitarios.org
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: comunitarios-production
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    name: Build and deploy to cPanel
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      SSH_HOST: ${{ secrets.SSH_HOST }}
+      SSH_PORT: ${{ secrets.SSH_PORT }}
+      SSH_USER: ${{ secrets.SSH_USER }}
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+      PRODUCTION_ENV: ${{ secrets.PRODUCTION_ENV }}
+      APP_ROOT: /home/comuonal/comunitarios_app
+      PUBLIC_ROOT: /home/comuonal/public_html
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, intl, pdo, pdo_sqlite, tokenizer, xml, ctype, curl, fileinfo, openssl
+          coverage: none
+          tools: composer:v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install PHP dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build frontend assets
+        run: npm run build
+
+      - name: Run automated tests
+        run: php artisan test --no-interaction
+
+      - name: Remove development dependencies
+        run: composer install --no-dev --prefer-dist --no-interaction --no-progress --optimize-autoloader
+
+      - name: Prepare release
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p .deploy/app .deploy/public
+
+          rsync -a \
+            app artisan bootstrap composer.json composer.lock config database \
+            resources routes storage vendor .env.example \
+            .deploy/app/
+
+          rsync -a public/ .deploy/public/
+          cp .github/deploy/index.php .deploy/public/index.php
+
+          printf '%s\n' "$PRODUCTION_ENV" > .deploy/production.env
+
+      - name: Configure SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          for required in SSH_HOST SSH_PORT SSH_USER SSH_PRIVATE_KEY SSH_KNOWN_HOSTS PRODUCTION_ENV; do
+            if [[ -z "${!required:-}" ]]; then
+              echo "Missing required GitHub secret: $required" >&2
+              exit 1
+            fi
+          done
+
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$SSH_PRIVATE_KEY" | tr -d '\r' > "$HOME/.ssh/id_deploy"
+          chmod 600 "$HOME/.ssh/id_deploy"
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+          cat > "$HOME/.ssh/config" <<EOF
+          Host production
+            HostName $SSH_HOST
+            Port $SSH_PORT
+            User $SSH_USER
+            IdentityFile $HOME/.ssh/id_deploy
+            IdentitiesOnly yes
+            StrictHostKeyChecking yes
+            ServerAliveInterval 30
+            ServerAliveCountMax 6
+          EOF
+          chmod 600 "$HOME/.ssh/config"
+
+          ssh production 'printf "SSH connection established.\n"'
+
+      - name: Upload release
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          RELEASE_ROOT="$APP_ROOT/releases/$GITHUB_SHA"
+
+          ssh production "mkdir -p '$RELEASE_ROOT' '$APP_ROOT/shared/storage/framework/cache/data' '$APP_ROOT/shared/storage/framework/sessions' '$APP_ROOT/shared/storage/framework/views' '$APP_ROOT/shared/storage/logs' '$PUBLIC_ROOT'"
+
+          rsync -az --delete \
+            --exclude='.env' \
+            --exclude='storage/' \
+            .deploy/app/ "production:$RELEASE_ROOT/"
+
+          rsync -az .deploy/production.env "production:$APP_ROOT/shared/.env"
+
+          rsync -az --delete \
+            --exclude='.well-known/' \
+            .deploy/public/ "production:$PUBLIC_ROOT/"
+
+      - name: Activate release
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          RELEASE_ROOT="$APP_ROOT/releases/$GITHUB_SHA"
+
+          ssh production "APP_ROOT='$APP_ROOT' RELEASE_ROOT='$RELEASE_ROOT' bash -se" <<'REMOTE'
+          set -Eeuo pipefail
+
+          if [[ "$APP_ROOT" != "/home/comuonal/comunitarios_app" ]]; then
+            echo "Unexpected deployment path; refusing to continue." >&2
+            exit 1
+          fi
+
+          ln -sfn "$APP_ROOT/shared/.env" "$RELEASE_ROOT/.env"
+          rm -rf "$RELEASE_ROOT/storage"
+          ln -s "$APP_ROOT/shared/storage" "$RELEASE_ROOT/storage"
+
+          chmod -R u+rwX "$APP_ROOT/shared/storage" "$RELEASE_ROOT/bootstrap/cache"
+
+          cd "$RELEASE_ROOT"
+          php artisan optimize:clear
+          php artisan optimize
+
+          ln -sfn "$RELEASE_ROOT" "$APP_ROOT/current-next"
+          mv -Tf "$APP_ROOT/current-next" "$APP_ROOT/current"
+
+          mapfile -t old_releases < <(find "$APP_ROOT/releases" -mindepth 1 -maxdepth 1 -type d -printf '%T@ %p\n' | sort -rn | tail -n +4 | cut -d' ' -f2-)
+          for release in "${old_releases[@]}"; do
+            if [[ "$release" == "$APP_ROOT/releases/"* ]]; then
+              rm -rf -- "$release"
+            fi
+          done
+          REMOTE
+
+      - name: Verify production
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          curl --fail --silent --show-error \
+            --retry 5 --retry-all-errors --retry-delay 5 \
+            --max-time 30 \
+            https://comunitarios.org/ > /dev/null
+          echo "Deployment verified at https://comunitarios.org/"
