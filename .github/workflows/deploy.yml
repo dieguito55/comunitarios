@@ -62,7 +62,7 @@ jobs:
         run: npm run build
 
       - name: Run automated tests
-        run: php artisan test --no-interaction
+        run: php artisan test
 
       - name: Remove development dependencies
         run: composer install --no-dev --prefer-dist --no-interaction --no-progress --optimize-autoloader
