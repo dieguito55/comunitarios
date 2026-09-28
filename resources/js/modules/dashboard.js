@@ -53,8 +53,8 @@ function pintarTotales(panel, totales) {
     const moneda = totales.moneda || 'PEN';
 
     animarCifra(panel.querySelector('[data-total-recaudado]'), Number(totales.recaudado) || 0, moneda);
-    escribir(panel.querySelector('[data-total-donaciones]'), String(totales.donaciones ?? 0));
-    escribir(panel.querySelector('[data-total-donantes]'), String(totales.donantes_unicos ?? 0));
+    animarEntero(panel.querySelector('[data-total-donaciones]'), Number(totales.donaciones) || 0);
+    animarEntero(panel.querySelector('[data-total-donantes]'), Number(totales.donantes_unicos) || 0);
 }
 
 function pintarFondos(panel, fondos) {
@@ -121,6 +121,42 @@ function pintarFeed(panel, recientes) {
             </li>`;
         })
         .join('');
+}
+
+/**
+ * Cuenta ascendente para los totales que son numeros enteros.
+ *
+ * Misma regla que animarCifra: solo en la primera carga, y nunca si se pidio
+ * reducir el movimiento. En los refrescos de cada 30 s el numero cambia de
+ * golpe, que es lo correcto —animar cada actualizacion haria parpadear el
+ * panel sin parar.
+ */
+function animarEntero(nodo, destino) {
+    if (!nodo) {
+        return;
+    }
+
+    if (!primeraCarga || prefiereMenosMovimiento() || destino <= 0) {
+        nodo.textContent = String(destino);
+
+        return;
+    }
+
+    const duracion = 800;
+    const inicio = performance.now();
+
+    const paso = (ahora) => {
+        const avance = Math.min(1, (ahora - inicio) / duracion);
+        const suavizado = 1 - Math.pow(1 - avance, 3);   // easeOutCubic
+
+        nodo.textContent = String(Math.round(destino * suavizado));
+
+        if (avance < 1) {
+            window.requestAnimationFrame(paso);
+        }
+    };
+
+    window.requestAnimationFrame(paso);
 }
 
 function escribir(nodo, texto) {

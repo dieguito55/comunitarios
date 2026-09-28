@@ -27,7 +27,7 @@ export function iniciarDonacion() {
     }
 
     const paso2 = document.querySelector('[data-paso="2"]');
-    const boton = formulario.querySelector('[data-donacion-enviar]');
+    const botones = formulario.querySelectorAll('[data-donacion-enviar]');
     const avisoGeneral = formulario.querySelector('[data-donacion-aviso]');
     const campoMonto = formulario.querySelector('#donacion-monto');
 
@@ -52,7 +52,7 @@ export function iniciarDonacion() {
             return;
         }
 
-        bloquear(boton, true);
+        bloquear(botones, true);
 
         const { ok, estado, datos: respuesta } = await enviarJson(RUTA_CREAR, datos);
 
@@ -72,7 +72,7 @@ export function iniciarDonacion() {
             return;
         }
 
-        bloquear(boton, false);
+        bloquear(botones, false);
 
         if (estado === 422 && respuesta && Array.isArray(respuesta.errores)) {
             marcarCamposConError(formulario, respuesta);
@@ -94,24 +94,38 @@ export function iniciarDonacion() {
  * los datos de abajo, y en el movil el fondo elegido queda fuera de pantalla.
  */
 function configurarResumen(formulario, campoMonto) {
-    const nodoFondo = document.querySelector('[data-resumen-fondo]');
-    const nodoMonto = document.querySelector('[data-resumen-monto]');
+    // querySelectorAll y no querySelector: en movil el resumen vive tambien en
+    // la barra inferior fija, y los dos tienen que decir lo mismo.
+    const nodosFondo = document.querySelectorAll('[data-resumen-fondo]');
+    const nodosMonto = document.querySelectorAll('[data-resumen-monto]');
     const moneda = formulario.dataset.moneda || 'PEN';
 
     const refrescar = () => {
-        if (nodoFondo) {
-            const elegido = formulario.querySelector('input[name="fondo_id"]:checked');
-            const tarjeta = elegido ? elegido.closest('[data-fondo-nombre]') : null;
+        const elegido = formulario.querySelector('input[name="fondo_id"]:checked');
+        const tarjeta = elegido ? elegido.closest('[data-fondo-nombre]') : null;
+        const monto = Number(String(campoMonto ? campoMonto.value : '').replace(',', '.')) || 0;
 
-            nodoFondo.textContent = tarjeta ? tarjeta.dataset.fondoNombre : 'Sin elegir';
-        }
+        nodosFondo.forEach((nodo) => {
+            nodo.textContent = tarjeta ? tarjeta.dataset.fondoNombre : 'Sin elegir';
+        });
 
-        if (nodoMonto) {
-            nodoMonto.textContent = formatearMonto(
-                Number(String(campoMonto ? campoMonto.value : '').replace(',', '.')) || 0,
-                moneda
-            );
-        }
+        nodosMonto.forEach((nodo) => {
+            const texto = formatearMonto(monto, moneda);
+
+            if (nodo.textContent === texto) {
+                return;
+            }
+
+            // El importe no salta de golpe: se atenua y vuelve. La clase la
+            // resuelve el CSS; aqui no se decide ninguna duracion visual.
+            nodo.classList.add('esta-cambiando');
+            window.setTimeout(() => {
+                nodo.textContent = texto;
+                nodo.classList.remove('esta-cambiando');
+            }, 120);
+        });
+
+        actualizarPasos(formulario, Boolean(tarjeta), monto);
     };
 
     formulario.querySelectorAll('input[name="fondo_id"]').forEach((radio) => {
@@ -122,7 +136,51 @@ function configurarResumen(formulario, campoMonto) {
         campoMonto.addEventListener('input', refrescar);
     }
 
+    const acepta = formulario.elements.acepta_terminos;
+
+    if (acepta) {
+        acepta.addEventListener('change', refrescar);
+    }
+
     refrescar();
+}
+
+/**
+ * Indicador de pasos: 1 Proyecto → 2 Tus datos → 3 Pago.
+ *
+ * Es informativo y no cambia el flujo: solo dice donde estas. `aria-current`
+ * se mueve con el paso activo para que un lector de pantalla lo anuncie; sin
+ * eso seria decoracion que solo entiende quien ve la pantalla.
+ */
+function actualizarPasos(formulario, hayFondo, monto) {
+    const pasos = document.querySelectorAll('[data-paso-indicador]');
+
+    if (pasos.length === 0) {
+        return;
+    }
+
+    const acepta = formulario.elements.acepta_terminos;
+    const listoParaPagar = hayFondo && monto > 0 && Boolean(acepta && acepta.checked);
+
+    const estados = {
+        1: hayFondo ? 'hecho' : 'activo',
+        2: hayFondo ? (listoParaPagar ? 'hecho' : 'activo') : 'pendiente',
+        3: listoParaPagar ? 'activo' : 'pendiente',
+    };
+
+    pasos.forEach((paso) => {
+        const estado = estados[paso.dataset.pasoIndicador] || 'pendiente';
+
+        paso.dataset.estado = estado;
+
+        if (estado === 'activo') {
+            paso.setAttribute('aria-current', 'step');
+
+            return;
+        }
+
+        paso.removeAttribute('aria-current');
+    });
 }
 
 /** Paso 1 → paso 2. Con un solo fondo, el paso 1 ya viene resuelto. */
@@ -303,12 +361,24 @@ function mostrarAviso(nodo, mensaje, tono) {
     nodo.innerHTML = mensaje ? escaparHtml(mensaje) : '';
 }
 
-/** Doble clic no puede crear dos donaciones. */
-function bloquear(boton, bloqueado) {
-    if (!boton) {
-        return;
-    }
+/**
+ * Doble clic no puede crear dos donaciones.
+ *
+ * Ademas del `disabled`, el boton dice lo que esta pasando y ensena un disco
+ * girando: sin ese aviso, el segundo que tarda Mercado Pago en responder
+ * parece que el boton no funciono, y la reaccion natural es volver a pulsar.
+ */
+function bloquear(botones, bloqueado) {
+    botones.forEach((boton) => {
+        boton.disabled = bloqueado;
 
-    boton.disabled = bloqueado;
-    boton.textContent = bloqueado ? 'Conectando con Mercado Pago…' : boton.dataset.textoOriginal;
+        if (!bloqueado) {
+            boton.textContent = boton.dataset.textoOriginal || 'Donar con tarjeta';
+
+            return;
+        }
+
+        // Marcado fijo, escrito aqui: no entra nada que venga de fuera.
+        boton.innerHTML = '<span class="don-girador" aria-hidden="true"></span> Conectando con Mercado Pago…';
+    });
 }

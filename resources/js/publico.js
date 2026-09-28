@@ -12,6 +12,7 @@
 import { iniciarDashboard } from './modules/dashboard.js';
 import { iniciarDonacion } from './modules/donacion.js';
 import { pintarIconos } from './modules/iconos.js';
+import { iniciarProgreso } from './modules/progreso.js';
 import { iniciarResultado } from './modules/resultado.js';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -22,4 +23,8 @@ document.addEventListener('DOMContentLoaded', () => {
     iniciarDonacion();
     iniciarResultado();
     iniciarDashboard();
+
+    // Lo ultimo: las barras y los contadores ya tienen su valor pintado, asi
+    // que esto solo les anade la entrada. Si falla, la pagina sigue correcta.
+    iniciarProgreso();
 });

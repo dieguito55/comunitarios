@@ -27,16 +27,46 @@
 
 @section('contenido')
 
-    <article class="don-layout {{ $fondo->color_token->claseCss() }}" data-fondo-slug="{{ $fondo->slug }}">
+    {{--
+        CABECERA DEL FONDO
+
+        La imagen va de fondo con un degradado navy encima: sin él, el texto
+        cae sobre la parte clara de cualquier fotografía y deja de leerse.
+
+        Las tres cifras viven AQUÍ y no en el panel lateral para no repetirlas:
+        son el dato clave del proyecto, y el lateral se queda con el progreso y
+        el botón. Llevan `data-contador` para que `progreso.js` las cuente al
+        entrar en pantalla; el número ya está escrito, así que sin JavaScript
+        se ven correctas desde el primer instante.
+    --}}
+    <section class="don-portada {{ $fondo->color_token->claseCss() }}">
+        @if ($fondo->imagen_portada)
+            <img src="{{ Str::startsWith($fondo->imagen_portada, ['media/', 'uploads/']) ? '/' . $fondo->imagen_portada : '/uploads/fondos/' . $fondo->imagen_portada }}"
+                 alt="{{ $fondo->nombre }}"
+                 loading="lazy">
+        @endif
+
+        <div class="don-portada__pie">
+            <dl class="don-portada__cifras">
+                <div>
+                    <dt>Recaudado</dt>
+                    <dd data-fondo-recaudado data-contador>{{ $simboloMoneda }} {{ number_format($metricas['recaudado'], 2) }}</dd>
+                </div>
+                <div>
+                    <dt>Aportes</dt>
+                    <dd><span data-fondo-donaciones data-contador>{{ $metricas['donaciones'] }}</span></dd>
+                </div>
+                <div>
+                    <dt>Personas</dt>
+                    <dd data-contador>{{ $metricas['donantes_unicos'] }}</dd>
+                </div>
+            </dl>
+        </div>
+    </section>
+
+    <article class="don-layout" data-fondo-slug="{{ $fondo->slug }}">
 
         <div>
-            @if ($fondo->imagen_portada)
-                <img class="don-portada"
-                     src="{{ Str::startsWith($fondo->imagen_portada, ['media/', 'uploads/']) ? '/' . $fondo->imagen_portada : '/uploads/fondos/' . $fondo->imagen_portada }}"
-                     alt="{{ $fondo->nombre }}"
-                     loading="lazy">
-            @endif
-
             @if ($fondo->descripcion)
                 <div class="don-panel don-prosa">
                     <h2 class="don-panel__titulo">Sobre el proyecto</h2>
@@ -58,27 +88,17 @@
             @endif
         </div>
 
-        {{-- Las cifras, fijas al lado mientras se lee la descripción. --}}
+        {{-- Progreso y llamada a la acción, fijos al lado mientras se lee. --}}
         <aside class="don-aside">
-            <div class="don-resumen">
+            <div class="don-resumen {{ $fondo->color_token->claseCss() }}">
                 <span class="pill pill-yellow">RECAUDACIÓN</span>
 
-                <div class="don-resumen__linea don-resumen__total">
-                    <span>Recaudado</span>
-                    <strong data-fondo-recaudado>{{ $simboloMoneda }} {{ number_format($metricas['recaudado'], 2) }}</strong>
-                </div>
-                <div class="don-resumen__linea">
-                    <span>Aportes</span>
-                    <strong><span data-fondo-donaciones>{{ $metricas['donaciones'] }}</span></strong>
-                </div>
-                <div class="don-resumen__linea">
-                    <span>Personas</span>
-                    <strong>{{ $metricas['donantes_unicos'] }}</strong>
-                </div>
-
                 {{-- Sin meta no hay barra: un 0 % se lee como un fracaso, no
-                     como una campaña que acaba de empezar. --}}
+                     como una campaña que acaba de empezar. En su lugar manda la
+                     cifra recaudada, ya visible en la cabecera. --}}
                 @if ($metricas['porcentaje'] !== null)
+                    <h2>{{ $metricas['porcentaje'] }}% de la meta</h2>
+
                     <div class="don-resumen__progreso">
                         <span class="don-progreso"
                               data-fondo-progreso
@@ -91,10 +111,15 @@
                                   data-fondo-progreso-relleno
                                   style="width: {{ $metricas['porcentaje'] }}%"></span></span>
                         <span class="don-progreso__texto">
-                            <span>{{ $metricas['porcentaje'] }}% de la meta</span>
-                            <span>{{ $simboloMoneda }} {{ number_format((float) $metricas['meta'], 0) }}</span>
+                            <span>{{ $simboloMoneda }} {{ number_format($metricas['recaudado'], 2) }}</span>
+                            <span>de {{ $simboloMoneda }} {{ number_format((float) $metricas['meta'], 0) }}</span>
                         </span>
                     </div>
+                @else
+                    <h2>{{ $simboloMoneda }} {{ number_format($metricas['recaudado'], 2) }}</h2>
+                    <p class="don-resumen__cerrado">
+                        Este proyecto todavía no tiene una meta pública definida.
+                    </p>
                 @endif
 
                 @if ($fondo->aceptaDonaciones())

@@ -93,11 +93,33 @@
             @endswitch
         </p>
 
+        {{--
+            ESTADO DE CARGA HONESTO.
+
+            Mientras `resultado.js` pregunta al servidor, se ven dos barras de
+            esqueleto en vez de una pantalla quieta que parece colgada. Nace
+            oculto: si el JavaScript no se ejecuta, no hay nada que esperar y
+            el mensaje de arriba es la respuesta final.
+        --}}
+        <div data-resultado-cargando hidden aria-hidden="true">
+            <span class="don-esqueleto"></span>
+            <span class="don-esqueleto"></span>
+        </div>
+
+        {{-- Solo aparece cuando la operación falló o no se pudo identificar. --}}
         <div class="don-resultado__acciones"
              data-resultado-acciones
              @if ($estadoProvisional !== 'rechazado' && $estadoProvisional !== 'desconocido') hidden @endif>
             <a class="button button-coral" href="{{ route('donar') }}">
                 Intentar de nuevo <i data-lucide="rotate-ccw"></i>
+            </a>
+        </div>
+
+        {{-- Estas dos salidas están siempre: pase lo que pase, nadie se queda
+             sin saber a dónde ir. --}}
+        <div class="don-resultado__acciones">
+            <a class="button button-ghost" href="{{ route('donar') }}">
+                Ver los proyectos
             </a>
             <a class="button button-ghost" href="{{ route('home') }}">
                 Volver al inicio

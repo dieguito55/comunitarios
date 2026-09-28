@@ -29,6 +29,14 @@ export function iniciarResultado() {
         return;
     }
 
+    // El esqueleto nace oculto en el HTML. Lo encendemos aqui porque solo hay
+    // algo que esperar si este modulo se esta ejecutando.
+    const cargando = panel.querySelector('[data-resultado-cargando]');
+
+    if (cargando) {
+        cargando.hidden = false;
+    }
+
     confirmar(panel, 0);
 }
 
@@ -197,6 +205,13 @@ function pintar(panel, estado) {
 
     if (acciones) {
         acciones.hidden = estado !== 'rechazado' && estado !== 'sin_identificar';
+    }
+
+    // El esqueleto solo tiene sentido mientras el estado sigue en el aire.
+    const cargando = panel.querySelector('[data-resultado-cargando]');
+
+    if (cargando) {
+        cargando.hidden = !texto.esperando;
     }
 
     // El contenedor lleva el tono: el CSS decide de que color es el orbe.

@@ -33,6 +33,31 @@
         </div>
     @else
 
+        {{--
+            INDICADOR DE PASOS
+
+            Es informativo: no cambia el flujo ni condiciona nada. `donacion.js`
+            mueve `data-estado` y `aria-current="step"` según lo que ya hayas
+            rellenado. Sin JavaScript se queda en el estado inicial, que es
+            correcto: el paso 1 es donde estás.
+        --}}
+        <ol class="don-pasos" aria-label="Pasos de la donación">
+            <li data-paso-indicador="1" data-estado="{{ $preseleccionado ? 'hecho' : 'activo' }}"
+                @if (! $preseleccionado) aria-current="step" @endif>
+                <span class="don-pasos__marca" aria-hidden="true">1</span>
+                <span class="don-pasos__texto">Proyecto</span>
+            </li>
+            <li data-paso-indicador="2" data-estado="{{ $preseleccionado ? 'activo' : 'pendiente' }}"
+                @if ($preseleccionado) aria-current="step" @endif>
+                <span class="don-pasos__marca" aria-hidden="true">2</span>
+                <span class="don-pasos__texto">Tus datos</span>
+            </li>
+            <li data-paso-indicador="3" data-estado="pendiente">
+                <span class="don-pasos__marca" aria-hidden="true">3</span>
+                <span class="don-pasos__texto">Pago</span>
+            </li>
+        </ol>
+
         {{-- El formulario entero se renderiza en el servidor: si el JavaScript
              no llega a ejecutarse, sigue siendo un formulario usable. El JS
              solo añade los pasos, el resumen en vivo y el envío sin recarga. --}}
@@ -64,7 +89,8 @@
                                 {{-- Radios de verdad, no divs con onclick: así funciona
                                      con teclado y lo anuncia un lector de pantalla. El
                                      input se oculta visualmente y la tarjeta entera hace
-                                     de control mediante :has(). --}}
+                                     de control mediante :has(), incluido el anillo de
+                                     foco. --}}
                                 <label class="don-fondo {{ $fondo->color_token->claseCss() }}"
                                        data-fondo-slug="{{ $fondo->slug }}"
                                        data-fondo-nombre="{{ $fondo->nombre }}">
@@ -78,7 +104,7 @@
                                              src="{{ Str::startsWith($fondo->imagen_portada, ['media/', 'uploads/']) ? '/' . $fondo->imagen_portada : '/uploads/fondos/' . $fondo->imagen_portada }}"
                                              alt=""
                                              loading="lazy"
-                                             width="400" height="140">
+                                             width="400" height="250">
                                     @else
                                         <span class="don-fondo__imagen" aria-hidden="true"></span>
                                     @endif
@@ -249,23 +275,35 @@
                                 Donar con tarjeta <i data-lucide="heart-handshake"></i>
                             </button>
 
+                            {{-- Sellos de confianza. Son lo último que se lee antes
+                                 de pulsar, y es donde se decide si uno se fía. --}}
                             <p class="don-pagos__medios">
-                                <i data-lucide="lock"></i>
-                                Te llevamos al checkout de Mercado Pago. No guardamos tu tarjeta.
+                                <span><i data-lucide="lock"></i> Pago seguro</span>
+                                <span><i data-lucide="credit-card"></i> Débito y crédito</span>
+                                <span><i data-lucide="shield-check"></i> No guardamos tu tarjeta</span>
                             </p>
 
-                            {{-- Hueco reservado para Yape/Plin (fase 5). Se deja
-                                 dibujado para que el diseño ya contemple dos
-                                 opciones y no haya que recolocarlo después. --}}
-                            <p class="don-pagos__pendiente">
-                                <i data-lucide="qr-code"></i>
-                                El pago con Yape y Plin estará disponible muy pronto.
-                            </p>
+                            {{-- Canal QR: NO está implementado, solo existen los enums
+                                 en PHP. Esto es el aviso, no el canal. El esqueleto de
+                                 clases que usará cuando llegue está comentado en
+                                 app.css, bajo «Canal QR (Yape / Plin)». --}}
+                            <div class="don-proximamente">
+                                <span class="don-proximamente__icono" aria-hidden="true">
+                                    <i data-lucide="smartphone"></i>
+                                </span>
+                                <div>
+                                    <strong>Yape y Plin <span class="pill">PRONTO</span></strong>
+                                    <p>
+                                        Estamos habilitando el pago con QR. Por ahora la donación se
+                                        completa con tarjeta a través de Mercado Pago.
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                     </section>
                 </div>
 
-                {{-- ── Resumen ──────────────────────────────────────────── --}}
+                {{-- ── Resumen lateral ──────────────────────────────────── --}}
                 <aside class="don-aside">
                     <div class="don-resumen">
                         <span class="pill pill-yellow">TU DONACIÓN</span>
@@ -296,6 +334,27 @@
                         </ul>
                     </div>
                 </aside>
+            </div>
+
+            {{--
+                BARRA INFERIOR EN MÓVIL
+
+                Va DENTRO del formulario a propósito: así su botón es un submit
+                de verdad y funciona aunque el JavaScript no cargue. El CSS solo
+                la muestra por debajo de 1024 px, que es donde el resumen
+                lateral no cabe.
+            --}}
+            <div class="don-barra-movil" aria-hidden="false">
+                <div class="don-barra-movil__datos">
+                    <span class="don-barra-movil__fondo" data-resumen-fondo>{{ $preseleccionado?->nombre ?? 'Sin elegir' }}</span>
+                    <span class="don-barra-movil__monto" data-resumen-monto>{{ $simboloMoneda }} 0.00</span>
+                </div>
+                <button type="submit"
+                        class="button button-coral"
+                        data-donacion-enviar
+                        data-texto-original="Donar">
+                    Donar <i data-lucide="heart-handshake"></i>
+                </button>
             </div>
         </form>
     @endif

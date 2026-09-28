@@ -156,7 +156,7 @@
             --}}
             @if ($fondoDestacado)
                 @php($avance = $fondoDestacado->porcentajeDeMeta())
-                <article class="featured-card reveal" data-dashboard>
+                <article class="featured-card reveal {{ $fondoDestacado->color_token->claseCss() }}" data-dashboard>
                     <span class="pill pill-yellow">PROGRAMA DESTACADO</span>
                     <h2>{{ $fondoDestacado->nombre }}</h2>
                     <p class="location"><i data-lucide="map-pin"></i> Puno, Perú</p>
@@ -170,18 +170,25 @@
                         {{-- Sin meta no hay barra. Un 0 % en la portada de una
                              fundacion se lee como un fracaso, no como una
                              campana que acaba de empezar. --}}
+                        {{-- Es la misma .don-progreso del sitio de donaciones, en su
+                             version sobre fondo oscuro. Antes era .accent-rule, una
+                             barra propia de la portada con el 10,1 % incrustado en el
+                             CSS: dos barras distintas para lo mismo. --}}
                         @if ($avance !== null)
-                            <div class="accent-rule"
-                                 data-fondo-progreso
-                                 role="progressbar"
-                                 aria-label="Avance de recaudación de {{ $fondoDestacado->nombre }}"
-                                 aria-valuemin="0"
-                                 aria-valuemax="100"
-                                 aria-valuenow="{{ (int) $avance }}"><span data-fondo-progreso-relleno style="width: {{ $avance }}%"></span></div>
-                            <div class="fundraising-meta">
+                            <span class="don-progreso"
+                                  data-fondo-progreso
+                                  role="progressbar"
+                                  aria-label="Avance de recaudación de {{ $fondoDestacado->nombre }}"
+                                  aria-valuemin="0"
+                                  aria-valuemax="100"
+                                  aria-valuenow="{{ (int) $avance }}"><span
+                                      class="don-progreso__relleno"
+                                      data-fondo-progreso-relleno
+                                      style="width: {{ $avance }}%"></span></span>
+                            <span class="don-progreso__texto">
                                 <span><b>{{ $avance }}%</b> de avance</span>
-                                <span>Meta <b>{{ $fondoDestacado->simboloMoneda() }} {{ number_format((float) $fondoDestacado->meta, 0) }}</b></span>
-                            </div>
+                                <span>Meta {{ $fondoDestacado->simboloMoneda() }} {{ number_format((float) $fondoDestacado->meta, 0) }}</span>
+                            </span>
                         @endif
 
                         <div class="featured-benefit">

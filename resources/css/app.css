@@ -408,17 +408,26 @@ section[id],footer[id] { scroll-margin-top: 78px; }
 /* =============================================================================
    SITIO PÚBLICO DE DONACIONES
    =============================================================================
-   Comparte el lenguaje visual de la portada en lugar de inventar otro: las
-   páginas de donación reutilizan .container, .button, .button-coral, .pill y
-   .icon-orb, que ya están definidos arriba. Aquí solo vive lo que no existía:
-   el formulario, las tarjetas de fondo y la pantalla de resultado.
+   Comparte el lenguaje visual de la portada en lugar de inventar otro: estas
+   páginas reutilizan .container, .button, .button-coral, .pill y .site-header,
+   que ya están definidos arriba. Aquí solo vive lo que no existía.
 
-   Ni un color literal: todo sale de los tokens de tokens.css, y los tonos
-   intermedios de color-mix() sobre ellos. Los estados se pintan con clases
-   (.estado--aprobado, .fondo--teal); el JavaScript nunca decide un color.
+   TODO el espaciado, los tamaños de letra, los radios, las sombras y las
+   duraciones salen de tokens.css. Si ves un valor suelto en píxeles en este
+   bloque es un descuido, no una decisión: los únicos literales admitidos son
+   los que no son escalables (grosores de 1 px, relaciones de aspecto y
+   alturas mínimas táctiles).
+
+   Ni un color literal. Los tonos intermedios salen de color-mix() sobre los
+   tokens. Los estados se pintan con clases (.estado--aprobado, .fondo--teal);
+   el JavaScript nunca decide un color.
    ========================================================================== */
 
-.don-pagina { background: var(--paper); }
+.don-pagina {
+    background: var(--superficie-hundida);
+    font-size: var(--texto-base);
+    line-height: var(--alto-texto);
+}
 
 /* ── Banda de cabecera ─────────────────────────────────────────────────────
    La misma gramática que el hero de la portada —fondo navy, arco amarillo,
@@ -435,27 +444,31 @@ section[id],footer[id] { scroll-margin-top: 78px; }
 
 .don-hero::before {
     position: absolute;
-    top: -120px;
-    right: -110px;
+    top: calc(var(--espacio-20) * -1.5);
+    right: calc(var(--espacio-16) * -1.7);
     width: 520px;
     height: 300px;
-    border: 1px solid color-mix(in srgb, var(--yellow) 58%, transparent);
-    border-radius: 50%;
-    transform: rotate(-6deg);
+    border: 1px solid color-mix(in srgb, var(--yellow) 55%, transparent);
+    border-radius: var(--radio-full);
     content: '';
+    transform: rotate(-6deg);
 }
 
-.don-hero__inner { position: relative; z-index: 1; padding-block: 34px 40px; }
+.don-hero__inner {
+    position: relative;
+    z-index: 1;
+    padding-block: var(--espacio-10) var(--espacio-12);
+}
 
-.don-hero .pill { margin-bottom: 12px; }
+.don-hero .pill { margin-bottom: var(--espacio-3); }
 
 .don-hero h1 {
-    margin: 0;
     max-width: 18ch;
-    font-size: clamp(1.9rem, 3.4vw, 2.9rem);
+    margin: 0;
+    font-size: var(--texto-3xl);
     font-weight: 800;
-    letter-spacing: -.045em;
-    line-height: 1.04;
+    letter-spacing: var(--traqueo-titulo);
+    line-height: var(--alto-titulo);
 }
 
 .don-hero h1 em {
@@ -468,82 +481,178 @@ section[id],footer[id] { scroll-margin-top: 78px; }
 
 .don-hero p {
     max-width: 58ch;
-    margin: 12px 0 0;
-    color: color-mix(in srgb, var(--white) 82%, transparent);
-    font-size: .92rem;
-    line-height: 1.6;
+    margin: var(--espacio-3) 0 0;
+    color: var(--sobre-oscuro);
+    font-size: var(--texto-base);
+    line-height: var(--alto-texto);
 }
 
 .don-migas {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 7px;
-    margin-bottom: 14px;
-    color: color-mix(in srgb, var(--white) 62%, transparent);
-    font-size: .7rem;
+    gap: var(--espacio-2);
+    margin: 0 0 var(--espacio-4);
+    color: var(--sobre-oscuro-tenue);
+    font-size: var(--texto-sm);
     font-weight: 600;
 }
 
-.don-migas a { color: inherit; text-decoration: none; }
+.don-migas a {
+    border-radius: var(--radio-sm);
+    color: inherit;
+    text-decoration: none;
+    transition: color var(--transicion-rapida) var(--curva);
+}
+
 .don-migas a:hover { color: var(--yellow); }
-.don-migas svg { width: 13px; }
+.don-migas a:focus-visible { outline: 2px solid var(--yellow); outline-offset: 3px; }
+.don-migas svg { width: 14px; }
 
 /* ── Rejilla de la página ──────────────────────────────────────────────── */
 
-.don-contenedor { padding-block: 30px 64px; }
+.don-contenedor { padding-block: var(--espacio-8) var(--espacio-16); }
 
 .don-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 340px;
     align-items: start;
-    gap: 26px;
+    gap: var(--espacio-6);
+    grid-template-columns: minmax(0, 1fr);
 }
 
-/* ── Tarjetas ──────────────────────────────────────────────────────────── */
+/* ── Indicador de pasos ────────────────────────────────────────────────────
+   Es puramente informativo: no cambia el flujo, solo dice dónde estás. El
+   estado lo pone `donacion.js` con `data-estado`, y aria-current="step"
+   marca el activo para los lectores de pantalla. */
 
-.don-panel {
-    padding: 24px;
-    border: 1px solid color-mix(in srgb, var(--navy) 9%, transparent);
-    border-radius: 18px;
-    background: var(--white);
-    box-shadow: var(--shadow);
-}
-
-.don-panel + .don-panel { margin-top: 20px; }
-
-.don-panel__titulo {
+.don-pasos {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin: 0 0 4px;
-    font-size: 1.12rem;
-    font-weight: 800;
-    letter-spacing: -.035em;
+    gap: var(--espacio-2);
+    margin: 0 0 var(--espacio-6);
+    padding: 0;
+    list-style: none;
 }
 
-.don-panel__numero {
+.don-pasos li {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: var(--espacio-2);
+    min-width: 0;
+}
+
+.don-pasos__marca {
     display: grid;
     width: 30px;
     height: 30px;
     flex: none;
     place-items: center;
-    border-radius: 50%;
+    border: 2px solid var(--borde-control);
+    border-radius: var(--radio-full);
+    background: var(--superficie);
+    color: var(--muted);
+    font-size: var(--texto-sm);
+    font-weight: 800;
+    transition:
+        background var(--transicion-media) var(--curva),
+        border-color var(--transicion-media) var(--curva),
+        color var(--transicion-media) var(--curva);
+}
+
+.don-pasos__texto {
+    overflow: hidden;
+    color: var(--muted);
+    font-size: var(--texto-sm);
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition: color var(--transicion-media) var(--curva);
+}
+
+/* La línea que une un paso con el siguiente. */
+.don-pasos li::after {
+    height: 2px;
+    flex: 1;
+    border-radius: var(--radio-full);
+    background: var(--line);
+    content: '';
+    transition: background var(--transicion-media) var(--curva);
+}
+
+.don-pasos li:last-child { flex: none; }
+.don-pasos li:last-child::after { display: none; }
+
+.don-pasos li[data-estado='activo'] .don-pasos__marca {
+    border-color: var(--blue);
+    background: var(--blue);
     color: var(--white);
+}
+
+.don-pasos li[data-estado='activo'] .don-pasos__texto { color: var(--ink); }
+
+.don-pasos li[data-estado='hecho'] .don-pasos__marca {
+    border-color: var(--teal);
+    background: var(--teal);
+    color: var(--white);
+    font-size: 0;                        /* se sustituye el número por el check */
+}
+
+.don-pasos li[data-estado='hecho'] .don-pasos__marca::after {
+    content: '✓';
+    font-size: var(--texto-sm);
+}
+
+.don-pasos li[data-estado='hecho']::after { background: var(--teal); }
+.don-pasos li[data-estado='hecho'] .don-pasos__texto { color: var(--ink); }
+
+/* ── Tarjetas ──────────────────────────────────────────────────────────── */
+
+.don-panel {
+    padding: var(--espacio-6);
+    border: var(--borde-sutil);
+    border-radius: var(--radio-lg);
+    background: var(--superficie);
+    box-shadow: var(--sombra-md);
+}
+
+.don-panel + .don-panel { margin-top: var(--espacio-5); }
+
+.don-panel__titulo {
+    display: flex;
+    align-items: center;
+    gap: var(--espacio-3);
+    margin: 0 0 var(--espacio-1);
+    font-size: var(--texto-xl);
+    font-weight: 800;
+    letter-spacing: var(--traqueo-titulo);
+    line-height: var(--alto-titulo);
+}
+
+.don-panel__numero {
+    display: grid;
+    width: 34px;
+    height: 34px;
+    flex: none;
+    place-items: center;
+    border-radius: var(--radio-full);
     background: linear-gradient(135deg, var(--blue), var(--navy));
-    font-size: .82rem;
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--blue) 35%, transparent);
+    color: var(--white);
+    font-size: var(--texto-sm);
     font-weight: 800;
 }
 
 .don-panel__ayuda {
-    margin: 0 0 18px 42px;
+    margin: 0 0 var(--espacio-5) calc(34px + var(--espacio-3));
     color: var(--muted);
-    font-size: .8rem;
+    font-size: var(--texto-sm);
+    line-height: var(--alto-medio);
 }
 
 .don-paso[hidden] { display: none; }
-
-.don-paso__accion { margin: 18px 0 0; }
-.don-campo__separado { margin-top: 12px; }
+.don-paso__accion { margin: var(--espacio-5) 0 0; }
+.don-campo__separado { margin-top: var(--espacio-3); }
 
 /* ── Selector de fondos ────────────────────────────────────────────────── */
 
@@ -552,8 +661,8 @@ section[id],footer[id] { scroll-margin-top: 78px; }
     margin: 0;
     padding: 0;
     border: 0;
-    gap: 14px;
-    grid-template-columns: repeat(auto-fill, minmax(232px, 1fr));
+    gap: var(--espacio-4);
+    grid-template-columns: minmax(0, 1fr);
 }
 
 .don-fondo {
@@ -561,21 +670,26 @@ section[id],footer[id] { scroll-margin-top: 78px; }
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    border: 1.5px solid var(--line);
-    border-radius: 15px;
-    background: var(--white);
+    border: 2px solid var(--borde-control);
+    border-radius: var(--radio-lg);
+    background: var(--superficie);
+    box-shadow: var(--sombra-sm);
     cursor: pointer;
-    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+    transition:
+        transform var(--transicion-media) var(--curva),
+        box-shadow var(--transicion-media) var(--curva),
+        border-color var(--transicion-media) var(--curva);
 }
 
 .don-fondo:hover {
-    border-color: color-mix(in srgb, var(--blue) 45%, transparent);
-    box-shadow: 0 14px 30px color-mix(in srgb, var(--navy) 14%, transparent);
-    transform: translateY(-3px);
+    border-color: color-mix(in srgb, var(--blue) 40%, transparent);
+    box-shadow: var(--sombra-lg);
+    transform: translateY(-2px);
 }
 
 /* El radio existe y es tabulable, pero se dibuja como una marca en la esquina:
-   así el foco del teclado se ve sobre la tarjeta entera. */
+   así el foco del teclado se ve sobre la tarjeta entera, no sobre un punto de
+   14 px que nadie encuentra. */
 .don-fondo input {
     position: absolute;
     width: 1px;
@@ -585,76 +699,92 @@ section[id],footer[id] { scroll-margin-top: 78px; }
 
 .don-fondo::after {
     position: absolute;
-    top: 12px;
-    right: 12px;
+    top: var(--espacio-3);
+    right: var(--espacio-3);
     z-index: 2;
     display: grid;
-    width: 24px;
-    height: 24px;
+    width: 28px;
+    height: 28px;
     place-items: center;
     border: 2px solid var(--white);
-    border-radius: 50%;
-    background: color-mix(in srgb, var(--navy) 35%, transparent);
+    border-radius: var(--radio-full);
+    background: color-mix(in srgb, var(--navy) 32%, transparent);
     color: var(--white);
     content: '';
-    transition: background .18s ease, transform .18s ease;
+    font-size: var(--texto-sm);
+    font-weight: 800;
+    transition:
+        background var(--transicion-media) var(--curva),
+        transform var(--transicion-media) var(--curva);
 }
 
 .don-fondo:has(input:checked) {
-    border-color: var(--coral);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--coral) 20%, transparent),
-                0 16px 34px color-mix(in srgb, var(--coral) 22%, transparent);
+    border-color: var(--fondo-color, var(--teal));
+    box-shadow: var(--sombra-elevada);
 }
 
 .don-fondo:has(input:checked)::after {
-    background: var(--coral);
+    background: var(--fondo-color, var(--teal));
     content: '✓';
-    font-size: .74rem;
-    font-weight: 800;
+    transform: scale(1.06);
 }
 
 .don-fondo:has(input:focus-visible) {
-    outline: 3px solid color-mix(in srgb, var(--blue) 55%, transparent);
-    outline-offset: 2px;
+    outline: 3px solid var(--blue);
+    outline-offset: 3px;
 }
 
+/* Relación 16:10 fija: sin esto, cada portada deforma su tarjeta y la rejilla
+   queda con los cuerpos a distinta altura. */
 .don-fondo__imagen {
     display: block;
     width: 100%;
-    height: 118px;
-    border-bottom: 1px solid var(--line);
+    aspect-ratio: 16 / 10;
+    border-bottom: var(--borde);
     background: linear-gradient(135deg, var(--navy), var(--blue));
     object-fit: cover;
 }
 
-.don-fondo__cuerpo { display: flex; flex: 1; flex-direction: column; padding: 13px 14px 15px; gap: 5px; }
+.don-fondo__cuerpo {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: var(--espacio-2);
+    padding: var(--espacio-4) var(--espacio-4) var(--espacio-5);
+}
 
-.don-fondo__nombre { font-size: .97rem; font-weight: 800; letter-spacing: -.03em; }
+.don-fondo__nombre {
+    font-size: var(--texto-lg);
+    font-weight: 700;
+    letter-spacing: var(--traqueo-titulo);
+    line-height: var(--alto-titulo);
+}
 
 .don-fondo__resumen {
     display: -webkit-box;
     overflow: hidden;
     color: var(--muted);
-    font-size: .76rem;
-    line-height: 1.45;
+    font-size: var(--texto-sm);
+    line-height: var(--alto-medio);
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
 }
 
 .don-fondo__cifra {
     margin-top: auto;
-    padding-top: 9px;
+    padding-top: var(--espacio-2);
     color: var(--navy);
-    font-size: 1.02rem;
+    font-size: var(--texto-xl);
     font-weight: 800;
-    letter-spacing: -.03em;
+    letter-spacing: var(--traqueo-titulo);
+    line-height: 1.1;
 }
 
 .don-fondo__cifra small {
     display: block;
-    margin-top: 1px;
+    margin-top: var(--espacio-1);
     color: var(--muted);
-    font-size: .68rem;
+    font-size: var(--texto-xs);
     font-weight: 600;
     letter-spacing: 0;
 }
@@ -666,7 +796,7 @@ section[id],footer[id] { scroll-margin-top: 78px; }
     right: 0;
     left: 0;
     z-index: 1;
-    height: 4px;
+    height: 5px;
     background: var(--fondo-color, var(--teal));
     content: '';
 }
@@ -677,241 +807,399 @@ section[id],footer[id] { scroll-margin-top: 78px; }
 .fondo--blue { --fondo-color: var(--blue); }
 .fondo--navy { --fondo-color: var(--navy); }
 
-/* ── Barra de progreso ─────────────────────────────────────────────────── */
+/* Un solo fondo no puede quedarse como una tarjeta diminuta contra el margen
+   izquierdo: se presenta en horizontal, con la imagen a un lado. */
+.don-fondos:has(> .don-fondo:only-child) { grid-template-columns: minmax(0, 1fr); }
+
+@media (min-width: 768px) {
+    .don-fondo:only-child {
+        display: grid;
+        grid-template-columns: minmax(0, 40%) minmax(0, 1fr);
+    }
+
+    .don-fondo:only-child .don-fondo__imagen {
+        height: 100%;
+        aspect-ratio: auto;
+        border-right: var(--borde);
+        border-bottom: 0;
+    }
+
+    .don-fondo:only-child .don-fondo__cuerpo { padding: var(--espacio-6); }
+}
+
+/* ── Barra de progreso ─────────────────────────────────────────────────────
+   El ancho real viene puesto en línea desde Blade, así que sin JavaScript la
+   barra ya es correcta. `progreso.js` la pone a cero y la deja crecer cuando
+   entra en pantalla: la animación es un añadido, nunca un requisito. */
 
 .don-progreso {
+    position: relative;
     display: block;
-    height: 7px;
+    height: 10px;
     overflow: hidden;
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--navy) 10%, transparent);
+    border-radius: var(--radio-full);
+    background: var(--line);
 }
 
 .don-progreso__relleno {
+    position: relative;
     display: block;
     height: 100%;
     border-radius: inherit;
     background: linear-gradient(90deg, var(--fondo-color, var(--teal)), var(--yellow));
-    transition: width .6s cubic-bezier(.22, .8, .3, 1);
+    transition: width 900ms var(--curva);
+}
+
+/* Brillo discreto recorriendo el relleno. Es una fundación, no un videojuego:
+   el barrido es lento y de baja opacidad. */
+.don-progreso__relleno::after {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        100deg,
+        transparent 20%,
+        color-mix(in srgb, var(--white) 38%, transparent) 50%,
+        transparent 80%
+    );
+    content: '';
+    transform: translateX(-100%);
+    animation: don-brillo 3.6s var(--curva) infinite;
+}
+
+@keyframes don-brillo {
+    0% { transform: translateX(-100%); }
+    55%, 100% { transform: translateX(100%); }
 }
 
 .don-progreso__texto {
     display: flex;
     justify-content: space-between;
-    color: var(--muted);
-    font-size: .68rem;
+    gap: var(--espacio-3);
+    margin-top: var(--espacio-2);
+    color: var(--ink);
+    font-size: var(--texto-sm);
     font-weight: 700;
 }
 
+.don-progreso__texto span:last-child { color: var(--muted); font-weight: 600; }
+
 /* ── Campos ────────────────────────────────────────────────────────────── */
 
-.don-rejilla-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.don-rejilla-2 {
+    display: grid;
+    gap: var(--espacio-4);
+    grid-template-columns: minmax(0, 1fr);
+}
 
-.don-campo { display: flex; flex-direction: column; margin-bottom: 16px; gap: 6px; }
+.don-campo {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: var(--espacio-5);
+    gap: var(--espacio-2);
+}
 
 .don-campo label,
 .don-campo legend {
     padding: 0;
-    color: var(--navy);
-    font-size: .79rem;
+    color: var(--ink);
+    font-size: var(--texto-sm);
     font-weight: 700;
 }
 
-.don-campo__ayuda { color: var(--muted); font-size: .71rem; font-weight: 500; }
+.don-campo legend { margin-bottom: var(--espacio-1); font-size: var(--texto-base); }
+
+.don-campo__ayuda {
+    color: var(--muted);
+    font-size: var(--texto-sm);
+    font-weight: 500;
+    line-height: var(--alto-medio);
+}
 
 .don-campo input,
 .don-campo select,
 .don-campo textarea {
     width: 100%;
-    min-height: 46px;
-    padding: 0 14px;
-    border: 1.5px solid var(--line);
-    border-radius: 11px;
-    background: var(--white);
+    min-height: 48px;
+    padding: 0 var(--espacio-4);
+    border: 1.5px solid var(--borde-control);
+    border-radius: var(--radio-md);
+    background: var(--superficie);
     color: var(--ink);
     font-family: inherit;
-    font-size: .88rem;
-    transition: border-color .16s ease, box-shadow .16s ease;
+    font-size: var(--texto-base);
+    transition:
+        border-color var(--transicion-rapida) var(--curva),
+        box-shadow var(--transicion-rapida) var(--curva),
+        background var(--transicion-rapida) var(--curva);
 }
 
+/* Flecha propia, nunca el control del sistema: el nativo cambia de forma en
+   cada navegador y rompe la coherencia del formulario. */
 .don-campo select {
     appearance: none;
-    padding-right: 38px;
-    /* Cheurón dibujado con gradientes: evita depender de una imagen externa. */
-    background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%),
-                      linear-gradient(135deg, var(--muted) 50%, transparent 50%);
-    background-position: calc(100% - 19px) center, calc(100% - 14px) center;
+    padding-right: var(--espacio-10);
+    background-image:
+        linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+        linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+    background-position: calc(100% - var(--espacio-5)) center, calc(100% - var(--espacio-4)) center;
     background-repeat: no-repeat;
-    background-size: 5px 5px, 5px 5px;
+    background-size: 6px 6px, 6px 6px;
 }
 
-.don-campo input:focus,
-.don-campo select:focus,
-.don-campo textarea:focus {
+.don-campo input:focus-visible,
+.don-campo select:focus-visible,
+.don-campo textarea:focus-visible {
     border-color: var(--blue);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--blue) 17%, transparent);
+    box-shadow: var(--foco-anillo);
     outline: none;
 }
 
-.don-campo input::placeholder { color: color-mix(in srgb, var(--muted) 65%, transparent); }
+.don-campo input::placeholder { color: color-mix(in srgb, var(--muted) 62%, transparent); }
 
-.don-campo__error { color: var(--coral); font-size: .73rem; font-weight: 700; }
-.don-campo__error:empty { display: none; }
-
-.don-campo--error input,
-.don-campo--error select { border-color: var(--coral); }
-
-.don-campo--error input:focus,
-.don-campo--error select:focus {
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--coral) 18%, transparent);
+/* El error EMPUJA el contenido, no lo tapa: nada de mensajes flotantes que
+   ocultan el campo siguiente. */
+.don-campo__error {
+    display: flex;
+    align-items: center;
+    gap: var(--espacio-2);
+    color: var(--coral-texto);
+    font-size: var(--texto-sm);
+    font-weight: 700;
 }
 
-/* Fieldset del monto: sin el marco por defecto del navegador. */
-fieldset.don-campo { margin: 0 0 16px; padding: 0; border: 0; }
+.don-campo__error:empty { display: none; }
+
+.don-campo__error::before {
+    flex: none;
+    content: '⚠';
+    font-size: var(--texto-base);
+}
+
+.don-campo--error input,
+.don-campo--error select {
+    border-color: var(--coral);
+    background: var(--coral-tenue);
+}
+
+.don-campo--error input:focus-visible,
+.don-campo--error select:focus-visible {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--coral) 24%, transparent);
+}
+
+fieldset.don-campo { margin: 0 0 var(--espacio-5); padding: 0; border: 0; }
 
 /* ── Montos sugeridos ──────────────────────────────────────────────────── */
 
-.don-montos { display: flex; flex-wrap: wrap; gap: 9px; }
+.don-montos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--espacio-3);
+}
 
 .don-monto {
-    min-height: 44px;
-    padding: 0 18px;
-    border: 1.5px solid var(--line);
-    border-radius: 11px;
-    background: var(--white);
+    min-height: 48px;
+    min-width: 88px;
+    padding: 0 var(--espacio-5);
+    border: 1.5px solid var(--borde-control);
+    border-radius: var(--radio-full);
+    background: var(--superficie);
     color: var(--navy);
     cursor: pointer;
     font-family: inherit;
-    font-size: .85rem;
+    font-size: var(--texto-base);
     font-weight: 800;
-    letter-spacing: -.02em;
-    transition: transform .15s ease, border-color .15s ease, background .15s ease, color .15s ease;
+    letter-spacing: var(--traqueo-titulo);
+    transition:
+        transform var(--transicion-rapida) var(--curva),
+        border-color var(--transicion-rapida) var(--curva),
+        background var(--transicion-rapida) var(--curva),
+        color var(--transicion-rapida) var(--curva),
+        box-shadow var(--transicion-rapida) var(--curva);
 }
 
-.don-monto:hover { border-color: var(--blue); transform: translateY(-2px); }
+.don-monto:hover {
+    border-color: var(--blue);
+    box-shadow: var(--sombra-sm);
+    transform: translateY(-2px);
+}
+
+.don-monto:focus-visible { box-shadow: var(--foco-anillo); outline: none; }
 
 .don-monto[aria-pressed='true'] {
-    border-color: transparent;
-    background: linear-gradient(135deg, var(--coral), color-mix(in srgb, var(--coral) 72%, var(--yellow)));
+    border-color: var(--navy);
+    background: var(--navy);
+    box-shadow: var(--sombra-md);
     color: var(--white);
-    box-shadow: 0 10px 22px color-mix(in srgb, var(--coral) 32%, transparent);
 }
 
-/* ── Casillas ──────────────────────────────────────────────────────────── */
+/* ── Casillas ──────────────────────────────────────────────────────────────
+   Checkbox propio de 22 px con el check animado. El nativo no se puede
+   estilar de forma fiable entre navegadores y en Windows sale diminuto. */
 
 .don-casilla {
     display: grid;
-    grid-template-columns: 20px 1fr;
     align-items: start;
-    margin-bottom: 13px;
-    gap: 11px;
+    margin-bottom: var(--espacio-4);
+    gap: var(--espacio-3);
+    grid-template-columns: 22px minmax(0, 1fr);
 }
 
 .don-casilla input {
-    width: 20px;
-    height: 20px;
-    margin: 1px 0 0;
-    accent-color: var(--coral);
+    width: 22px;
+    height: 22px;
+    margin: 2px 0 0;
+    padding: 0;
+    appearance: none;
+    border: 2px solid var(--borde-control);
+    border-radius: var(--radio-sm);
+    background: var(--superficie);
     cursor: pointer;
+    transition:
+        background var(--transicion-rapida) var(--curva),
+        border-color var(--transicion-rapida) var(--curva);
 }
 
-.don-casilla label { color: var(--ink); font-size: .82rem; font-weight: 600; cursor: pointer; }
-.don-casilla .don-campo__ayuda { display: block; margin-top: 2px; }
+.don-casilla input::after {
+    display: block;
+    width: 100%;
+    height: 100%;
+    color: var(--white);
+    content: '✓';
+    font-size: 13px;
+    font-weight: 800;
+    line-height: 18px;
+    text-align: center;
+    transform: scale(0);
+    transition: transform var(--transicion-media) var(--curva);
+}
+
+.don-casilla input:checked {
+    border-color: var(--coral);
+    background: var(--coral);
+}
+
+.don-casilla input:checked::after { transform: scale(1); }
+.don-casilla input:focus-visible { box-shadow: var(--foco-anillo); outline: none; }
+
+.don-casilla label {
+    color: var(--ink);
+    font-size: var(--texto-base);
+    font-weight: 600;
+    cursor: pointer;
+    line-height: var(--alto-medio);
+}
+
+.don-casilla .don-campo__ayuda { display: block; margin-top: var(--espacio-1); }
 
 /* ── Avisos ────────────────────────────────────────────────────────────── */
 
 .don-aviso {
     display: flex;
     align-items: flex-start;
-    gap: 10px;
-    margin-bottom: 15px;
-    padding: 13px 15px;
-    border: 1px solid var(--line);
+    gap: var(--espacio-3);
+    margin-bottom: var(--espacio-4);
+    padding: var(--espacio-4);
+    border: var(--borde);
     border-left: 3px solid var(--blue);
-    border-radius: 11px;
-    background: color-mix(in srgb, var(--blue) 5%, var(--white));
+    border-radius: var(--radio-md);
+    background: var(--blue-tenue);
     color: var(--ink);
-    font-size: .82rem;
-    line-height: 1.5;
+    font-size: var(--texto-sm);
+    line-height: var(--alto-medio);
 }
 
 .don-aviso:empty { display: none; }
-.don-aviso svg { width: 18px; flex: none; margin-top: 1px; }
+.don-aviso svg { width: 20px; flex: none; margin-top: 1px; }
 .don-aviso a { color: var(--blue); font-weight: 700; }
 
-.don-aviso--error {
-    border-left-color: var(--coral);
-    background: color-mix(in srgb, var(--coral) 7%, var(--white));
+.don-aviso--error { border-left-color: var(--coral); background: var(--coral-tenue); }
+.don-aviso--atencion { border-left-color: var(--yellow); background: var(--yellow-tenue); }
+
+.don-aviso h2 {
+    margin: 0 0 var(--espacio-1);
+    font-size: var(--texto-lg);
+    font-weight: 800;
+    line-height: var(--alto-titulo);
 }
 
-.don-aviso--atencion {
-    border-left-color: var(--yellow);
-    background: color-mix(in srgb, var(--yellow) 10%, var(--white));
-}
-
-.don-aviso h2 { margin: 0 0 4px; font-size: 1rem; font-weight: 800; }
 .don-aviso p { margin: 0; }
 
 /* ── Panel lateral: resumen y confianza ────────────────────────────────── */
 
-.don-aside { position: sticky; top: 78px; display: grid; gap: 16px; }
+.don-aside { display: grid; gap: var(--espacio-4); }
 
 .don-resumen {
-    padding: 20px;
-    border: 1px solid color-mix(in srgb, var(--white) 24%, transparent);
-    border-radius: 18px;
+    padding: var(--espacio-6);
+    border: 1px solid var(--linea-oscura);
+    border-radius: var(--radio-lg);
+    background: var(--superficie-oscura);
+    box-shadow: var(--sombra-elevada);
     color: var(--white);
-    background: linear-gradient(145deg, var(--navy), var(--navy-deep));
-    box-shadow: 0 22px 48px color-mix(in srgb, var(--navy) 38%, transparent);
 }
 
 .don-resumen h2 {
-    margin: 10px 0 14px;
-    font-size: 1.16rem;
+    margin: var(--espacio-3) 0 var(--espacio-4);
+    font-size: var(--texto-xl);
     font-weight: 800;
-    letter-spacing: -.035em;
+    letter-spacing: var(--traqueo-titulo);
+    line-height: var(--alto-titulo);
 }
 
 .don-resumen__linea {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    gap: 12px;
-    padding: 9px 0;
-    border-top: 1px solid color-mix(in srgb, var(--white) 13%, transparent);
-    font-size: .78rem;
+    gap: var(--espacio-3);
+    padding: var(--espacio-3) 0;
+    border-top: 1px solid var(--linea-oscura);
+    font-size: var(--texto-sm);
 }
 
-.don-resumen__linea span { color: color-mix(in srgb, var(--white) 62%, transparent); }
-.don-resumen__linea strong { font-size: .92rem; font-weight: 800; text-align: right; }
+.don-resumen__linea span { color: var(--sobre-oscuro-tenue); }
+
+.don-resumen__linea strong {
+    font-size: var(--texto-base);
+    font-weight: 800;
+    text-align: right;
+}
 
 .don-resumen__total strong {
     color: var(--yellow);
-    font-size: 1.5rem;
-    letter-spacing: -.04em;
+    font-size: var(--texto-2xl);
+    letter-spacing: var(--traqueo-titulo);
 }
 
-.don-confianza { display: grid; gap: 11px; margin-top: 16px; }
+/* El monto no cambia de golpe: se desvanece y vuelve. Lo dispara
+   `donacion.js` añadiendo la clase durante 250 ms. */
+.don-resumen__total strong { transition: opacity var(--transicion-rapida) var(--curva); }
+.don-resumen__total strong.esta-cambiando { opacity: 0.35; }
+
+.don-confianza {
+    display: grid;
+    gap: var(--espacio-3);
+    margin: var(--espacio-5) 0 0;
+    padding: 0;
+}
 
 .don-confianza li {
     display: grid;
-    grid-template-columns: 30px 1fr;
     align-items: start;
-    gap: 10px;
-    color: color-mix(in srgb, var(--white) 72%, transparent);
-    font-size: .74rem;
-    line-height: 1.45;
+    gap: var(--espacio-3);
+    grid-template-columns: 34px minmax(0, 1fr);
+    color: var(--sobre-oscuro);
+    font-size: var(--texto-sm);
+    line-height: var(--alto-medio);
     list-style: none;
 }
 
-.don-confianza svg { width: 17px; color: var(--yellow); }
+.don-confianza svg { width: 18px; color: var(--yellow); }
 
-.don-confianza span {
+.don-confianza > li > span:first-child {
     display: grid;
-    width: 30px;
-    height: 30px;
+    width: 34px;
+    height: 34px;
     place-items: center;
-    border-radius: 9px;
+    border-radius: var(--radio-md);
     background: color-mix(in srgb, var(--white) 10%, transparent);
 }
 
@@ -919,234 +1207,501 @@ fieldset.don-campo { margin: 0 0 16px; padding: 0; border: 0; }
 
 /* ── Bloque de pago ────────────────────────────────────────────────────── */
 
-.don-pagos { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--line); }
+.don-pagos {
+    margin-top: var(--espacio-6);
+    padding-top: var(--espacio-6);
+    border-top: var(--borde);
+}
 
-.don-pagos .button { width: 100%; min-height: 52px; font-size: .92rem; }
+.don-pagos .button {
+    width: 100%;
+    min-height: 56px;
+    border-radius: var(--radio-md);
+    font-size: var(--texto-base);
+}
+
+/* Estado cargando: el botón se bloquea y aparece el disco girando. Sin esto,
+   un doble clic nervioso crea dos donaciones. */
+.don-pagos .button[disabled] {
+    cursor: progress;
+    opacity: 0.82;
+    transform: none;
+}
+
+.don-girador {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    flex: none;
+    border: 2px solid color-mix(in srgb, var(--white) 40%, transparent);
+    border-top-color: var(--white);
+    border-radius: var(--radio-full);
+    animation: don-girar 720ms linear infinite;
+}
+
+@keyframes don-girar { to { transform: rotate(360deg); } }
 
 .don-pagos__medios {
     display: flex;
+    flex-wrap: wrap;
     justify-content: center;
     align-items: center;
-    gap: 8px;
-    margin-top: 13px;
+    gap: var(--espacio-2) var(--espacio-4);
+    margin: var(--espacio-4) 0 0;
     color: var(--muted);
-    font-size: .69rem;
+    font-size: var(--texto-xs);
     font-weight: 600;
 }
 
-.don-pagos__medios svg { width: 15px; }
-
-/* Hueco del segundo canal de pago (Yape/Plin). Se deja dibujado para que el
-   diseño ya contemple dos opciones y no haya que recolocar nada despues. */
-.don-pagos__pendiente {
-    display: flex;
+.don-pagos__medios span {
+    display: inline-flex;
     align-items: center;
-    justify-content: center;
-    gap: 9px;
-    margin: 12px 0 0;
-    padding: 13px;
-    border: 1.5px dashed var(--line);
-    border-radius: 12px;
-    color: var(--muted);
-    font-size: .76rem;
-    font-weight: 600;
+    gap: var(--espacio-2);
 }
 
-.don-pagos__pendiente svg { width: 17px; }
+.don-pagos__medios svg { width: 16px; color: var(--teal-texto); }
 
-/* ── Página de un fondo ────────────────────────────────────────────────── */
+/* ── Canal QR (Yape / Plin) ────────────────────────────────────────────────
+   El canal NO está implementado: solo existen los enums en PHP. Esto es el
+   aviso, y está diseñado como una funcionalidad anunciada, no como una caja
+   suelta al final del formulario. */
 
-.don-portada {
-    display: block;
-    width: 100%;
-    max-height: 340px;
-    margin-bottom: 20px;
-    border-radius: 18px;
-    box-shadow: var(--shadow);
-    object-fit: cover;
-}
-
-.don-prosa { line-height: 1.68; }
-.don-prosa .don-panel__titulo { margin-bottom: 12px; }
-
-.don-galeria {
+.don-proximamente {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-    gap: 12px;
-    margin-top: 14px;
+    align-items: center;
+    gap: var(--espacio-4);
+    margin-top: var(--espacio-4);
+    padding: var(--espacio-5);
+    border: 2px dashed color-mix(in srgb, var(--blue) 28%, var(--line));
+    border-radius: var(--radio-lg);
+    background: var(--blue-tenue);
+    grid-template-columns: 44px minmax(0, 1fr);
 }
 
-.don-galeria img {
+.don-proximamente__icono {
+    display: grid;
+    width: 44px;
+    height: 44px;
+    place-items: center;
+    border-radius: var(--radio-md);
+    background: var(--superficie);
+    box-shadow: var(--sombra-sm);
+    color: var(--blue);
+}
+
+.don-proximamente__icono svg { width: 22px; }
+
+.don-proximamente strong {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--espacio-2);
+    color: var(--ink);
+    font-size: var(--texto-base);
+    font-weight: 800;
+}
+
+.don-proximamente p {
+    margin: var(--espacio-1) 0 0;
+    color: var(--muted);
+    font-size: var(--texto-sm);
+    line-height: var(--alto-medio);
+}
+
+.don-proximamente .pill {
+    background: var(--yellow);
+    color: var(--navy-deep);
+    font-size: var(--texto-xs);
+}
+
+/*
+   ESQUELETO DEL CANAL QR — sin marcado que lo use todavía.
+
+   Cuando se implemente el pago con Yape/Plin (otro encargo), estas son las
+   clases previstas para que el diseño ya esté decidido y no haya que
+   improvisarlo con prisa el día que llegue:
+
+   .don-qr               Contenedor del canal, hermano de .don-pagos.
+   .don-qr__imagen       El QR estático de la organización, cuadrado, con
+                         borde --borde y radio --radio-lg. Nunca por debajo de
+                         220 px: un QR pequeño no se escanea.
+   .don-qr__pasos        Lista ordenada de instrucciones (escanea, paga,
+                         adjunta), con el mismo tratamiento que .don-confianza
+                         pero sobre fondo claro.
+   .don-qr__comprobante  Zona de subida del comprobante: recuadro discontinuo,
+                         estado de arrastre, vista previa y botón de quitar.
+                         El archivo va a disco privado, nunca a public/.
+*/
+
+/* ── Barra inferior en móvil ───────────────────────────────────────────────
+   El resumen de escritorio no cabe en el móvil, y dejarlo arriba obliga a
+   subir para recordar cuánto vas a donar. Se convierte en una barra fija con
+   lo único que importa: proyecto, monto y el botón. */
+
+.don-barra-movil {
+    position: fixed;
+    z-index: 90;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: none;
+    align-items: center;
+    gap: var(--espacio-4);
+    padding: var(--espacio-3) var(--espacio-4);
+    padding-bottom: calc(var(--espacio-3) + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--linea-oscura);
+    background: var(--superficie-oscura);
+    box-shadow: 0 -8px 28px rgba(var(--sombra-tinte), 0.22);
+    color: var(--white);
+}
+
+.don-barra-movil__datos { min-width: 0; flex: 1; }
+
+.don-barra-movil__fondo {
     display: block;
-    width: 100%;
-    height: 148px;
-    border-radius: 12px;
-    object-fit: cover;
+    overflow: hidden;
+    color: var(--sobre-oscuro-tenue);
+    font-size: var(--texto-xs);
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-.don-resumen__progreso { margin: 16px 0 4px; display: grid; gap: 7px; }
-.don-resumen__progreso .don-progreso { background: color-mix(in srgb, var(--white) 16%, transparent); }
-.don-resumen__progreso .don-progreso__texto { color: color-mix(in srgb, var(--white) 68%, transparent); }
-
-.don-resumen__boton { width: 100%; margin-top: 18px; }
-
-.don-resumen__cerrado {
-    margin: 16px 0 0;
-    color: color-mix(in srgb, var(--white) 72%, transparent);
-    font-size: .76rem;
-    line-height: 1.5;
+.don-barra-movil__monto {
+    display: block;
+    color: var(--yellow);
+    font-size: var(--texto-xl);
+    font-weight: 800;
+    letter-spacing: var(--traqueo-titulo);
+    line-height: 1.1;
 }
+
+.don-barra-movil .button { min-height: 48px; flex: none; }
 
 /* ── Pantalla de resultado ─────────────────────────────────────────────── */
 
 .don-resultado {
-    max-width: 620px;
+    max-width: 560px;
     margin: 0 auto;
-    padding: 38px 32px 32px;
-    border: 1px solid color-mix(in srgb, var(--navy) 9%, transparent);
-    border-radius: 20px;
-    background: var(--white);
-    box-shadow: var(--shadow);
+    padding: var(--espacio-12) var(--espacio-8) var(--espacio-8);
+    border: var(--borde-sutil);
+    border-radius: var(--radio-xl);
+    background: var(--superficie);
+    box-shadow: var(--sombra-elevada);
     text-align: center;
+    animation: don-entrada var(--transicion-lenta) var(--curva) both;
+}
+
+@keyframes don-entrada {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: none; }
 }
 
 .don-resultado__orbe {
     display: grid;
-    width: 76px;
-    height: 76px;
-    margin: 0 auto 20px;
+    width: 84px;
+    height: 84px;
+    margin: 0 auto var(--espacio-5);
     place-items: center;
-    border-radius: 50%;
-    color: var(--white);
+    border-radius: var(--radio-full);
     background: linear-gradient(135deg, var(--blue), var(--navy));
+    color: var(--white);
+    animation: don-orbe 520ms var(--curva) both 120ms;
 }
 
-.don-resultado__orbe svg { width: 34px; }
+/* Escala elástica corta al entrar. Nada de confeti. */
+@keyframes don-orbe {
+    from { opacity: 0; transform: scale(0.55); }
+    60% { transform: scale(1.08); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.don-resultado__orbe svg { width: 38px; }
 
 .don-resultado h1 {
-    margin: 0 0 10px;
-    font-size: clamp(1.4rem, 2.6vw, 1.85rem);
+    margin: 0 0 var(--espacio-3);
+    font-size: var(--texto-2xl);
     font-weight: 800;
-    letter-spacing: -.04em;
-    line-height: 1.15;
+    letter-spacing: var(--traqueo-titulo);
+    line-height: var(--alto-titulo);
 }
 
-.don-resultado p { margin: 0 auto; max-width: 46ch; color: var(--muted); font-size: .88rem; line-height: 1.6; }
+.don-resultado p {
+    max-width: 46ch;
+    margin: 0 auto;
+    color: var(--muted);
+    font-size: var(--texto-base);
+    line-height: var(--alto-texto);
+}
 
 .don-resultado__acciones {
     display: flex;
     justify-content: center;
     flex-wrap: wrap;
-    gap: 11px;
-    margin-top: 24px;
+    gap: var(--espacio-3);
+    margin-top: var(--espacio-6);
 }
 
 .don-resultado__acciones[hidden] { display: none; }
 
 .don-resultado .don-campo__ayuda {
-    margin-top: 22px;
-    padding-top: 18px;
-    border-top: 1px solid var(--line);
+    margin-top: var(--espacio-6);
+    padding-top: var(--espacio-5);
+    border-top: var(--borde);
+}
+
+/* Esqueleto de carga honesto mientras `resultado.js` pregunta al servidor: se
+   ve que algo está pasando, en vez de una pantalla en blanco. */
+.don-esqueleto {
+    height: 12px;
+    margin: var(--espacio-2) auto 0;
+    border-radius: var(--radio-full);
+    background: linear-gradient(90deg, var(--line), var(--paper), var(--line));
+    background-size: 200% 100%;
+    animation: don-esqueleto 1.4s linear infinite;
+}
+
+.don-esqueleto:nth-of-type(1) { width: 72%; }
+.don-esqueleto:nth-of-type(2) { width: 54%; }
+
+@keyframes don-esqueleto {
+    from { background-position: 200% 0; }
+    to { background-position: -200% 0; }
 }
 
 /* La insignia de estado: el JavaScript emite la clase y el CSS decide el
-   color. Nunca al reves. */
+   color. Nunca al revés. */
 .estado {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    min-height: 26px;
-    margin-bottom: 14px;
-    padding: 0 13px;
-    border-radius: 999px;
-    font-size: .68rem;
+    gap: var(--espacio-2);
+    min-height: 28px;
+    margin-bottom: var(--espacio-4);
+    padding: 0 var(--espacio-4);
+    border-radius: var(--radio-full);
+    font-size: var(--texto-xs);
     font-weight: 800;
-    letter-spacing: .04em;
+    letter-spacing: var(--traqueo-etiqueta);
     text-transform: uppercase;
 }
 
 .estado[hidden] { display: none; }
 
-.estado--aprobado { background: color-mix(in srgb, var(--teal) 15%, var(--white)); color: var(--teal); }
-.estado--rechazado { background: color-mix(in srgb, var(--coral) 13%, var(--white)); color: var(--coral); }
+.estado--aprobado { background: var(--teal-tenue); color: var(--teal-texto); }
+.estado--rechazado { background: var(--coral-tenue); color: var(--coral-texto); }
 .estado--en_proceso,
-.estado--pendiente { background: color-mix(in srgb, var(--yellow) 20%, var(--white)); color: color-mix(in srgb, var(--yellow) 72%, var(--ink)); }
+.estado--pendiente { background: var(--yellow-tenue); color: var(--yellow-texto); }
 
-.don-resultado--aprobado .don-resultado__orbe { background: linear-gradient(135deg, var(--teal), color-mix(in srgb, var(--teal) 60%, var(--blue))); }
-.don-resultado--rechazado .don-resultado__orbe { background: linear-gradient(135deg, var(--coral), color-mix(in srgb, var(--coral) 65%, var(--yellow))); }
-.don-resultado--en_proceso .don-resultado__orbe { background: linear-gradient(135deg, var(--yellow), var(--coral)); }
+.don-resultado--aprobado .don-resultado__orbe {
+    background: linear-gradient(135deg, var(--teal), color-mix(in srgb, var(--teal) 58%, var(--blue)));
+}
 
-/* Latido mientras se espera la confirmacion. */
-.don-resultado--esperando .don-resultado__orbe { animation: don-latido 1.9s ease-in-out infinite; }
+.don-resultado--rechazado .don-resultado__orbe {
+    background: linear-gradient(135deg, var(--coral), color-mix(in srgb, var(--coral) 62%, var(--yellow)));
+}
+
+.don-resultado--en_proceso .don-resultado__orbe {
+    background: linear-gradient(135deg, var(--yellow), var(--coral));
+}
+
+/* Latido mientras se espera la confirmación. */
+.don-resultado--esperando .don-resultado__orbe {
+    animation:
+        don-orbe 520ms var(--curva) both 120ms,
+        don-latido 2.1s ease-in-out 700ms infinite;
+}
 
 @keyframes don-latido {
-    0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--blue) 35%, transparent); }
-    50% { box-shadow: 0 0 0 16px color-mix(in srgb, var(--blue) 0%, transparent); }
+    0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--blue) 32%, transparent); }
+    50% { box-shadow: 0 0 0 18px color-mix(in srgb, var(--blue) 0%, transparent); }
 }
 
-/* Secundario sobre fondo claro. El .button-outline de la portada esta pensado
-   para ir sobre el hero oscuro y aqui desapareceria. */
-.button-ghost {
-    border-color: var(--line);
-    background: var(--white);
-    color: var(--navy);
+/* ── Página de un fondo ────────────────────────────────────────────────── */
+
+.don-portada {
+    position: relative;
+    display: grid;
+    align-items: end;
+    min-height: 280px;
+    margin-bottom: var(--espacio-5);
+    overflow: hidden;
+    border-radius: var(--radio-xl);
+    box-shadow: var(--sombra-lg);
 }
 
-.button-ghost:hover { border-color: var(--blue); color: var(--blue); }
+.don-portada img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Degradado navy encima: sin él, el texto cae sobre la parte clara de
+   cualquier fotografía y deja de leerse. */
+.don-portada::after {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        0deg,
+        var(--navy-deep) 0%,
+        color-mix(in srgb, var(--navy-deep) 72%, transparent) 38%,
+        transparent 78%
+    );
+    content: '';
+}
+
+.don-portada__pie {
+    position: relative;
+    z-index: 1;
+    padding: var(--espacio-6);
+    color: var(--white);
+}
+
+.don-portada__pie h2 {
+    margin: var(--espacio-2) 0 0;
+    font-size: var(--texto-2xl);
+    font-weight: 800;
+    letter-spacing: var(--traqueo-titulo);
+    line-height: var(--alto-titulo);
+}
+
+/* Datos clave sobre la imagen de cabecera. Viven aquí y no en el panel
+   lateral para no repetir la misma cifra dos veces en la misma pantalla. */
+.don-portada__cifras {
+    display: grid;
+    gap: var(--espacio-4);
+    margin: 0;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+}
+
+.don-portada__cifras div {
+    padding: var(--espacio-3) var(--espacio-4);
+    border: 1px solid var(--linea-oscura);
+    border-radius: var(--radio-md);
+    background: color-mix(in srgb, var(--navy-deep) 55%, transparent);
+    backdrop-filter: blur(8px);
+}
+
+.don-portada__cifras dt {
+    color: var(--sobre-oscuro-tenue);
+    font-size: var(--texto-xs);
+    font-weight: 700;
+    letter-spacing: var(--traqueo-etiqueta);
+    text-transform: uppercase;
+}
+
+.don-portada__cifras dd {
+    margin: var(--espacio-1) 0 0;
+    color: var(--white);
+    font-size: var(--texto-xl);
+    font-weight: 800;
+    letter-spacing: var(--traqueo-titulo);
+    line-height: 1.1;
+}
+
+.don-prosa { font-size: var(--texto-base); line-height: var(--alto-texto); }
+.don-prosa .don-panel__titulo { margin-bottom: var(--espacio-3); }
+
+.don-galeria {
+    display: grid;
+    gap: var(--espacio-3);
+    margin-top: var(--espacio-4);
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+}
+
+.don-galeria img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    border-radius: var(--radio-md);
+    box-shadow: var(--sombra-sm);
+    object-fit: cover;
+}
+
+.don-resumen__progreso { display: grid; gap: var(--espacio-2); margin: var(--espacio-5) 0 var(--espacio-1); }
+.don-resumen__progreso .don-progreso { background: color-mix(in srgb, var(--white) 16%, transparent); }
+.don-resumen__progreso .don-progreso__texto { color: var(--white); }
+.don-resumen__progreso .don-progreso__texto span:last-child { color: var(--sobre-oscuro-tenue); }
+
+.don-resumen__boton { width: 100%; min-height: 52px; margin-top: var(--espacio-5); border-radius: var(--radio-md); }
+
+.don-resumen__cerrado {
+    margin: var(--espacio-5) 0 0;
+    color: var(--sobre-oscuro);
+    font-size: var(--texto-sm);
+    line-height: var(--alto-medio);
+}
 
 /* ── Dashboard en vivo ─────────────────────────────────────────────────── */
 
-.don-dashboard { margin-top: 34px; }
+.don-dashboard { margin-top: var(--espacio-12); }
 
 .don-dashboard__titulo {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin: 0 0 16px;
-    font-size: 1.28rem;
+    gap: var(--espacio-3);
+    margin: 0 0 var(--espacio-5);
+    font-size: var(--texto-2xl);
     font-weight: 800;
-    letter-spacing: -.04em;
+    letter-spacing: var(--traqueo-titulo);
+    line-height: var(--alto-titulo);
 }
+
+.don-dashboard__titulo svg { width: 26px; color: var(--teal-texto); }
 
 .don-totales {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-    gap: 14px;
+    gap: var(--espacio-4);
+    grid-template-columns: minmax(0, 1fr);
 }
 
 .don-total {
     display: grid;
-    grid-template-columns: 46px 1fr;
     align-items: center;
-    gap: 13px;
-    padding: 16px 18px;
-    border: 1px solid color-mix(in srgb, var(--navy) 9%, transparent);
-    border-radius: 15px;
-    background: var(--white);
-    box-shadow: var(--shadow);
+    gap: var(--espacio-4);
+    padding: var(--espacio-5);
+    border: var(--borde-sutil);
+    border-radius: var(--radio-lg);
+    background: var(--superficie);
+    box-shadow: var(--sombra-md);
+    grid-template-columns: 52px minmax(0, 1fr);
 }
 
 .don-total > span:first-child {
     display: grid;
-    width: 46px;
-    height: 46px;
+    width: 52px;
+    height: 52px;
     place-items: center;
-    border-radius: 50%;
-    color: var(--white);
+    border-radius: var(--radio-full);
     background: linear-gradient(135deg, var(--blue), var(--navy));
+    box-shadow: 0 6px 16px color-mix(in srgb, var(--blue) 30%, transparent);
+    color: var(--white);
 }
 
-.don-total svg { width: 21px; }
-.don-total strong { display: block; font-size: 1.42rem; font-weight: 800; letter-spacing: -.04em; line-height: 1.05; }
-.don-total p { margin: 3px 0 0; color: var(--blue); font-size: .71rem; font-weight: 600; }
+.don-total svg { width: 24px; }
+
+.don-total strong {
+    display: block;
+    font-size: var(--texto-2xl);
+    font-weight: 800;
+    letter-spacing: var(--traqueo-titulo);
+    line-height: 1.05;
+}
+
+.don-total p {
+    margin: var(--espacio-1) 0 0;
+    color: var(--muted);
+    font-size: var(--texto-sm);
+    font-weight: 600;
+}
 
 .don-feed {
-    margin: 16px 0 0;
-    padding: 8px 6px;
-    border: 1px solid color-mix(in srgb, var(--navy) 9%, transparent);
-    border-radius: 15px;
-    background: var(--white);
-    box-shadow: var(--shadow);
+    margin: var(--espacio-5) 0 0;
+    padding: var(--espacio-2);
+    border: var(--borde-sutil);
+    border-radius: var(--radio-lg);
+    background: var(--superficie);
+    box-shadow: var(--sombra-md);
     list-style: none;
 }
 
@@ -1154,24 +1709,71 @@ fieldset.don-campo { margin: 0 0 16px; padding: 0; border: 0; }
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 12px;
-    padding: 11px 14px;
-    font-size: .82rem;
+    gap: var(--espacio-3);
+    padding: var(--espacio-3) var(--espacio-4);
+    font-size: var(--texto-base);
 }
 
-.don-feed li + li { border-top: 1px solid var(--line); }
+.don-feed li + li { border-top: var(--borde); }
 .don-feed strong { font-weight: 800; }
-.don-feed__cuando { color: var(--muted); font-size: .71rem; }
+.don-feed__cuando { color: var(--muted); font-size: var(--texto-xs); }
 
 .don-feed__monto {
-    color: var(--teal);
-    font-size: .88rem;
+    color: var(--teal-texto);
+    font-size: var(--texto-lg);
     font-weight: 800;
-    letter-spacing: -.02em;
+    letter-spacing: var(--traqueo-titulo);
     white-space: nowrap;
 }
 
-.don-feed__vacio { justify-content: center; color: var(--muted); font-size: .8rem; }
+/* Estado vacío con ilustración: «todavía no hay donaciones» es el momento en
+   que más falta hace una invitación, y era una línea gris. */
+.don-vacio {
+    display: block;
+    padding: var(--espacio-10) var(--espacio-5);
+    text-align: center;
+}
+
+.don-vacio svg { width: 108px; height: auto; margin-bottom: var(--espacio-4); }
+.don-vacio__trazo { fill: none; stroke: var(--line); stroke-width: 4; }
+.don-vacio__acento { fill: none; stroke: var(--teal); stroke-width: 4; }
+.don-vacio__relleno { fill: var(--paper); }
+
+.don-vacio strong {
+    display: block;
+    margin-bottom: var(--espacio-2);
+    font-size: var(--texto-lg);
+    font-weight: 800;
+    letter-spacing: var(--traqueo-titulo);
+}
+
+.don-vacio p {
+    max-width: 38ch;
+    margin: 0 auto var(--espacio-5);
+    color: var(--muted);
+    font-size: var(--texto-sm);
+    line-height: var(--alto-medio);
+}
+
+/* ── Contadores ────────────────────────────────────────────────────────────
+   `progreso.js` cuenta hacia arriba al entrar en pantalla. Mientras no lo
+   haya hecho, el número ya está escrito en el HTML: sin JavaScript la cifra
+   es correcta desde el primer instante. */
+
+[data-contador] { font-variant-numeric: tabular-nums; }
+
+/* ── Botón secundario ──────────────────────────────────────────────────────
+   El .button-outline de la portada está pensado para ir sobre el hero oscuro
+   y aquí desaparecería. */
+
+.button-ghost {
+    border-color: var(--line);
+    background: var(--superficie);
+    color: var(--navy);
+}
+
+.button-ghost:hover { border-color: var(--blue); color: var(--blue); }
+.button-ghost:focus-visible { box-shadow: var(--foco-anillo); outline: none; }
 
 /* ── Utilidades ────────────────────────────────────────────────────────── */
 
@@ -1184,38 +1786,181 @@ fieldset.don-campo { margin: 0 0 16px; padding: 0; border: 0; }
     white-space: nowrap;
 }
 
-/* ── Adaptación a pantallas pequeñas ───────────────────────────────────── */
+/* =============================================================================
+   PORTADA — tarjeta del programa destacado
+   =============================================================================
+   Lo único que este rediseño toca de la landing. El resto de su identidad se
+   queda como está.
+   ========================================================================== */
 
-@media (max-width: 1000px) {
-    .don-layout { grid-template-columns: 1fr; }
-    /* El resumen sube al principio: en movil, saber cuanto vas a donar importa
-       mas que tenerlo fijo a un lado. */
-    .don-aside { position: static; order: -1; }
+/* La tarjeta ya entra con fade + 16 px gracias a .reveal. Aquí solo se añade
+   la elevación al pasar por encima: dice «esto se puede tocar». */
+.featured-card {
+    transition:
+        transform var(--transicion-media) var(--curva),
+        box-shadow var(--transicion-media) var(--curva);
 }
 
-@media (max-width: 720px) {
-    .don-contenedor { padding-block: 22px 48px; }
-    .don-panel { padding: 18px 16px; }
-    .don-rejilla-2 { grid-template-columns: 1fr; gap: 0; }
-    .don-fondos { grid-template-columns: 1fr; }
-    .don-hero__inner { padding-block: 26px 30px; }
-    .don-resultado { padding: 30px 20px 26px; }
+.featured-card:hover { transform: translateY(-3px); }
+
+/* El botón tiene que ser el elemento más llamativo de la tarjeta: es por
+   donde entra el dinero. `.featured-card .full` lo dejaba en 38 px de alto y
+   letra de 0.67 rem, más pequeño que el enlace que tiene debajo. */
+.featured-card .donation-button {
+    min-height: 52px;
+    margin-top: var(--espacio-4);
+    border-radius: var(--radio-md);
+    box-shadow: 0 12px 26px color-mix(in srgb, var(--coral) 38%, transparent);
+    font-size: var(--texto-base);
 }
 
-/* A 360 px todo tiene que seguir siendo usable: los montos ocupan dos
-   columnas y el panel pierde el margen lateral, no el contenido. */
-@media (max-width: 400px) {
-    .don-montos { display: grid; grid-template-columns: 1fr 1fr; }
-    .don-monto { padding: 0 10px; }
-    .don-panel__titulo { font-size: 1rem; }
-    .don-panel__ayuda { margin-left: 0; }
+.featured-card .donation-button:hover {
+    box-shadow: 0 18px 36px color-mix(in srgb, var(--coral) 45%, transparent);
+    transform: translateY(-2px);
 }
+
+.featured-card .donation-button:active { transform: translateY(-1px); }
+
+/* Brillo que lo recorre cada ~4 s. Va en ::before porque ::after ya lo usa el
+   brillo de hover de .button, y dos animaciones sobre el mismo pseudoelemento
+   se pisan. Baja opacidad y pausa larga: atrae la vista sin marear. */
+.donation-button::before {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        110deg,
+        transparent 35%,
+        color-mix(in srgb, var(--white) 28%, transparent) 50%,
+        transparent 65%
+    );
+    content: '';
+    pointer-events: none;
+    transform: translateX(-120%);
+    animation: don-destello 4.2s var(--curva) 1.6s infinite;
+}
+
+@keyframes don-destello {
+    0% { transform: translateX(-120%); }
+    22%, 100% { transform: translateX(120%); }
+}
+
+/* El corazón late solo mientras el cursor está encima: en bucle permanente
+   sería ruido. */
+.donation-button:hover svg { animation: don-corazon 900ms var(--curva) infinite; }
+
+@keyframes don-corazon {
+    0%, 100% { transform: scale(1); }
+    28% { transform: scale(1.16); }
+    56% { transform: scale(1); }
+}
+
+/* La barra de la tarjeta es la misma .don-progreso del sitio de donaciones,
+   en su versión sobre fondo oscuro: una sola barra en todo el proyecto. */
+.featured-card .don-progreso {
+    margin: var(--espacio-3) 0 var(--espacio-2);
+    background: color-mix(in srgb, var(--white) 16%, transparent);
+}
+
+.featured-card .don-progreso__texto {
+    color: var(--white);
+    font-size: var(--texto-xs);
+}
+
+.featured-card .don-progreso__texto span:last-child { color: var(--sobre-oscuro-tenue); }
 
 @media (prefers-reduced-motion: reduce) {
-    .don-progreso__relleno,
+    .featured-card,
+    .featured-card .donation-button { transition: none; }
+
+    .featured-card:hover,
+    .featured-card .donation-button:hover { transform: none; }
+
+    .donation-button::before,
+    .donation-button:hover svg { animation: none; }
+
+    .donation-button::before { opacity: 0; }
+}
+
+/* =============================================================================
+   ADAPTACIÓN A PANTALLAS — móvil primero
+   Cortes: 480, 768, 1024, 1280.
+   ========================================================================== */
+
+@media (min-width: 480px) {
+    .don-rejilla-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .don-totales { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (min-width: 768px) {
+    .don-contenedor { padding-block: var(--espacio-10) var(--espacio-16); }
+    .don-panel { padding: var(--espacio-8); }
+    .don-fondos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .don-totales { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .don-hero__inner { padding-block: var(--espacio-12) var(--espacio-16); }
+}
+
+@media (min-width: 1024px) {
+    .don-layout { grid-template-columns: minmax(0, 62fr) minmax(0, 38fr); }
+
+    /* El resumen acompaña al formulario mientras se rellena. El `top` lo
+       separa de la cabecera fija, que mide 61 px. */
+    .don-aside { position: sticky; top: calc(61px + var(--espacio-5)); }
+
+    .don-fondos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (min-width: 1280px) {
+    .don-fondos { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* La barra inferior solo existe donde no cabe el resumen lateral. */
+@media (max-width: 1023px) {
+    .don-barra-movil { display: flex; }
+
+    /* Aire para que la barra no tape el final del formulario. */
+    .don-pagina:has(.don-barra-movil) .don-contenedor { padding-bottom: var(--espacio-20); }
+
+    /* En móvil el resumen completo estorba: manda la barra. */
+    .don-aside { display: none; }
+}
+
+/* A 360 px nada puede desbordar. Los montos pasan a rejilla de dos y el
+   indicador de pasos se queda solo con los números. */
+@media (max-width: 479px) {
+    .don-panel { padding: var(--espacio-4); }
+    .don-montos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .don-monto { min-width: 0; padding: 0 var(--espacio-3); }
+    .don-panel__ayuda { margin-left: 0; }
+    .don-pasos__texto { display: none; }
+    .don-resultado { padding: var(--espacio-8) var(--espacio-4) var(--espacio-6); }
+    .don-portada { min-height: 220px; }
+    .don-portada__pie { padding: var(--espacio-4); }
+}
+
+/* =============================================================================
+   MOVIMIENTO REDUCIDO
+   Obligatorio, no opcional: quien lo pidió ve el contenido en su estado final.
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
     .don-fondo,
-    .don-monto { transition: none; }
+    .don-monto,
+    .don-casilla input,
+    .don-casilla input::after,
+    .don-progreso__relleno,
+    .don-pasos__marca,
+    .don-pasos li::after,
+    .don-resumen__total strong { transition: none; }
+
     .don-fondo:hover,
     .don-monto:hover { transform: none; }
-    .don-resultado--esperando .don-resultado__orbe { animation: none; }
+
+    .don-progreso__relleno::after,
+    .don-resultado,
+    .don-resultado__orbe,
+    .don-resultado--esperando .don-resultado__orbe,
+    .don-esqueleto,
+    .don-girador { animation: none; }
+
+    .don-esqueleto { background: var(--line); }
 }

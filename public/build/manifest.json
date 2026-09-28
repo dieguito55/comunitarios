@@ -27,8 +27,8 @@
     "file": "assets/fonts-DkNLQKRn.css",
     "src": "_fonts-DkNLQKRn.css"
   },
-  "_lucide-BLqXQxXG.js": {
-    "file": "assets/lucide-BLqXQxXG.js",
+  "_lucide-odjoJAp0.js": {
+    "file": "assets/lucide-odjoJAp0.js",
     "name": "lucide"
   },
   "_manrope-400-normal-8tf8FM3T.woff": {
@@ -72,7 +72,7 @@
     "src": "_manrope-800-normal-uHUdIJgA.woff"
   },
   "resources/css/admin.css": {
-    "file": "assets/admin-CAttcYs_.css",
+    "file": "assets/admin-C5cEykcq.css",
     "name": "admin",
     "names": [
       "admin.css"
@@ -81,7 +81,7 @@
     "isEntry": true
   },
   "resources/css/app.css": {
-    "file": "assets/app-22hYbh3E.css",
+    "file": "assets/app-D-WpOgvQ.css",
     "name": "app",
     "names": [
       "app.css"
@@ -90,21 +90,21 @@
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-BO0JEAzC.js",
+    "file": "assets/app-B6mtUydU.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
     "imports": [
-      "_lucide-BLqXQxXG.js"
+      "_lucide-odjoJAp0.js"
     ]
   },
   "resources/js/publico.js": {
-    "file": "assets/publico-Bgt4F75Z.js",
+    "file": "assets/publico-DsIwOkyy.js",
     "name": "publico",
     "src": "resources/js/publico.js",
     "isEntry": true,
     "imports": [
-      "_lucide-BLqXQxXG.js"
+      "_lucide-odjoJAp0.js"
     ]
   }
 }

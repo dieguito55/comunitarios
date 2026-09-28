@@ -5,10 +5,21 @@
    se compilan como bundles separados. Cambiar la paleta se hace aquí y en
    ningún otro sitio.
 
-   Ningún archivo del proyecto debe declarar un color hex fuera de este.
+   NINGÚN archivo del proyecto debe declarar un color literal fuera de este.
+   Los tonos intermedios salen de color-mix() sobre estos tokens, nunca de un
+   hex escrito a mano.
+
+   Única excepción conocida: el <meta name="theme-color"> de
+   publico/layout.blade.php, porque un <meta> no puede referirse a una
+   variable CSS. Tiene un test que vigila que siga coincidiendo con
+   --navy-deep; si cambias ese valor, cambia también el meta.
    ========================================================================== */
 
 :root {
+
+    /* ── Paleta ────────────────────────────────────────────────────────────
+       Es la de la marca y no se toca. */
+
     --navy: #052743;
     --navy-deep: #031d35;
     --blue: #064e9f;
@@ -20,6 +31,142 @@
     --line: #dbe3e9;
     --paper: #f7f8f8;
     --white: #fff;
-    --shadow: 0 16px 38px rgba(4, 31, 55, 0.13);
     --container: 1240px;
+
+    /* ── Espaciado ─────────────────────────────────────────────────────────
+       Escala de 4 px. Todo margin, padding y gap del sitio público sale de
+       aquí: es lo que hace que dos bloques distintos respiren igual. Un valor
+       suelto en píxeles es, casi siempre, una decisión que nadie tomó. */
+
+    --espacio-1: 4px;
+    --espacio-2: 8px;
+    --espacio-3: 12px;
+    --espacio-4: 16px;
+    --espacio-5: 20px;
+    --espacio-6: 24px;
+    --espacio-8: 32px;
+    --espacio-10: 40px;
+    --espacio-12: 48px;
+    --espacio-16: 64px;
+    --espacio-20: 80px;
+
+    /* ── Tipografía ────────────────────────────────────────────────────────
+       Fluida con clamp(): crece con el ancho sin los saltos bruscos de los
+       media queries. El cuerpo NUNCA baja de 16 px, ni en el móvil más
+       pequeño — por debajo de eso Safari hace zoom al enfocar un campo y la
+       página salta. */
+
+    --texto-xs: clamp(0.8125rem, 0.79rem + 0.12vw, 0.875rem);   /* 13 → 14 */
+    --texto-sm: clamp(0.875rem, 0.85rem + 0.13vw, 0.9375rem);   /* 14 → 15 */
+    --texto-base: clamp(1rem, 0.97rem + 0.15vw, 1.0625rem);     /* 16 → 17 */
+    --texto-lg: clamp(1.125rem, 1.08rem + 0.22vw, 1.25rem);     /* 18 → 20 */
+    --texto-xl: clamp(1.3125rem, 1.24rem + 0.36vw, 1.5rem);     /* 21 → 24 */
+    --texto-2xl: clamp(1.5rem, 1.37rem + 0.62vw, 1.875rem);     /* 24 → 30 */
+    --texto-3xl: clamp(1.875rem, 1.64rem + 1.12vw, 2.5rem);     /* 30 → 40 */
+    --texto-4xl: clamp(2.25rem, 1.82rem + 2.05vw, 3.25rem);     /* 36 → 52 */
+
+    /* Los títulos van apretados y el texto corrido, suelto. Es la diferencia
+       entre un titular que se lee como una unidad y un párrafo legible. */
+    --alto-titulo: 1.15;
+    --alto-medio: 1.35;
+    --alto-texto: 1.6;
+
+    --traqueo-titulo: -0.035em;
+    --traqueo-etiqueta: 0.06em;
+
+    /* ── Radios ────────────────────────────────────────────────────────────
+       Curvas generosas y coherentes: un control pequeño no lleva el mismo
+       radio que una tarjeta grande, o la tarjeta parece un globo. */
+
+    --radio-sm: 8px;
+    --radio-md: 14px;
+    --radio-lg: 20px;
+    --radio-xl: 28px;
+    --radio-full: 999px;
+
+    /* ── Sombras ───────────────────────────────────────────────────────────
+       Tintadas en navy, nunca en negro puro: una sombra negra sobre papel
+       cálido se ve sucia. Van en capas —una sombra de contacto corta más una
+       difusa larga— que es como cae la luz de verdad. */
+
+    --sombra-tinte: 4, 31, 55;
+
+    --sombra-sm:
+        0 1px 2px rgba(var(--sombra-tinte), 0.05),
+        0 2px 6px rgba(var(--sombra-tinte), 0.05);
+    --sombra-md:
+        0 2px 4px rgba(var(--sombra-tinte), 0.05),
+        0 8px 20px rgba(var(--sombra-tinte), 0.08);
+    --sombra-lg:
+        0 4px 8px rgba(var(--sombra-tinte), 0.05),
+        0 16px 38px rgba(var(--sombra-tinte), 0.11);
+    --sombra-elevada:
+        0 8px 16px rgba(var(--sombra-tinte), 0.07),
+        0 28px 60px rgba(var(--sombra-tinte), 0.18);
+
+    /* Alias histórico. Lo usa la portada en varios sitios y renombrarlo allí
+       queda fuera del encargo de rediseño del sitio de donaciones. */
+    --shadow: var(--sombra-lg);
+
+    /* ── Bordes ────────────────────────────────────────────────────────────*/
+
+    --borde: 1px solid var(--line);
+    --borde-fuerte: 1.5px solid var(--line);
+    --borde-sutil: 1px solid color-mix(in srgb, var(--navy) 9%, transparent);
+
+    /* ── Superficies ───────────────────────────────────────────────────────*/
+
+    --superficie: var(--white);
+    --superficie-hundida: var(--paper);
+    --superficie-oscura: linear-gradient(145deg, var(--navy), var(--navy-deep));
+
+    /* ── Foco ──────────────────────────────────────────────────────────────
+       Un solo anillo para todo el sitio. Si cada control inventa el suyo,
+       quien navega con teclado no aprende a reconocerlo. */
+
+    --foco: color-mix(in srgb, var(--blue) 32%, transparent);
+    --foco-anillo: 0 0 0 3px var(--foco);
+
+    /* ── Tonos translúcidos ────────────────────────────────────────────────
+       Fondos suaves para avisos y estados. Antes se escribían a mano con
+       color-mix() repetido en cada regla; aquí se declaran una vez. */
+
+    --coral-tenue: color-mix(in srgb, var(--coral) 8%, var(--white));
+    --coral-suave: color-mix(in srgb, var(--coral) 16%, var(--white));
+    --yellow-tenue: color-mix(in srgb, var(--yellow) 12%, var(--white));
+    --yellow-suave: color-mix(in srgb, var(--yellow) 22%, var(--white));
+    --teal-tenue: color-mix(in srgb, var(--teal) 9%, var(--white));
+    --teal-suave: color-mix(in srgb, var(--teal) 17%, var(--white));
+    --blue-tenue: color-mix(in srgb, var(--blue) 6%, var(--white));
+
+    /* Versiones legibles de los colores de marca SOBRE FONDO CLARO.
+       Los porcentajes no son de gusto: son el mínimo oscurecimiento que
+       alcanza 4.5:1 tanto sobre blanco como sobre la variante tenue de cada
+       color, que es donde se usan. Los de marca a pelo no llegan —el amarillo
+       puro sobre blanco da 1.9:1 y el coral, 3.7:1— así que para TEXTO se usan
+       estos, y los de marca quedan para fondos y bordes. */
+    --yellow-texto: color-mix(in srgb, var(--yellow) 53%, var(--ink));   /* 4.90 / 4.53 */
+    --teal-texto: color-mix(in srgb, var(--teal) 71%, var(--ink));       /* 5.04 / 4.55 */
+    --coral-texto: color-mix(in srgb, var(--coral) 80%, var(--ink));     /* 5.11 / 4.61 */
+
+    /* Borde de los controles. --line (1.30:1 sobre blanco) vale para separar
+       filas de una lista, que es decoración, pero NO para dibujar el contorno
+       de un campo: eso es lo que identifica al control y la norma pide 3:1.
+       Este llega a 3.39 sobre blanco y 3.18 sobre --paper. */
+    --borde-control: color-mix(in srgb, var(--line) 30%, var(--muted));
+
+    /* Sobre fondo oscuro, al revés: blancos rebajados en vez de grises. */
+    --sobre-oscuro: color-mix(in srgb, var(--white) 78%, transparent);
+    --sobre-oscuro-tenue: color-mix(in srgb, var(--white) 58%, transparent);
+    --linea-oscura: color-mix(in srgb, var(--white) 14%, transparent);
+
+    /* ── Movimiento ────────────────────────────────────────────────────────
+       Una sola curva para todo el sitio: entra rápido y aterriza despacio,
+       que es lo que hace que una transición se sienta «cara» sin que nadie
+       sepa decir por qué. */
+
+    --curva: cubic-bezier(0.22, 1, 0.36, 1);
+    --transicion-rapida: 150ms;
+    --transicion-media: 250ms;
+    --transicion-lenta: 400ms;
 }
