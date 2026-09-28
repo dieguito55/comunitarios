@@ -2,50 +2,69 @@
 # =============================================================================
 # Despliegue automático de comunitarios.org en cPanel
 #
-# Lo ejecuta cPanel → Git™ Version Control → botón "Update from Remote" /
-# "Deploy HEAD Commit", cada vez que se despliega una versión nueva.
+# Lo ejecuta cPanel → Git™ Version Control → «Pull or Deploy» → botón
+# «Deploy HEAD Commit», después de haber traído los cambios con
+# «Update from Remote».
 #
-# ⚠️ ANTES DE USARLO HAY QUE CAMBIAR DOS COSAS:
+# NO HAY NADA QUE EDITAR A MANO. Las dos rutas que antes estaban escritas
+# —la del repositorio y la de PHP— se deducen solas:
 #
-#   1. USUARIO  → el nombre de tu cuenta de cPanel (el de la esquina superior
-#                 derecha del panel, o lo que devuelve `whoami` en Terminal).
-#                 Aparece una sola vez, en la línea del `export DP=`.
+#   - El repositorio: cPanel ejecuta estas tareas desde la raíz del repo, asi
+#     que `pwd` ya es la ruta buena, la clone donde la clone. En esta cuenta
+#     es /home/comuonal/repositories/comunitarios, pero no hace falta saberlo.
 #
-#   2. La ruta de PHP → la de abajo es la de EasyApache con PHP 8.2. Si tu
-#                 cuenta usa otra versión, averigua la buena en cPanel →
-#                 Terminal con:    which php
-#                 y sustituye /opt/cpanel/ea-php82/root/usr/bin/php por lo que
-#                 te devuelva. Con PHP 8.3 sería .../ea-php83/...
+#   - PHP: se usa el de la version elegida en «Select PHP Version», que es el
+#     que responde a `php`. Si ahi no hubiera ninguno, se prueban las rutas de
+#     EasyApache para 8.3 y 8.2.
 #
-# El repositorio se clona en /home/USUARIO/comunitarios y el Document Root del
-# dominio apunta a /home/USUARIO/comunitarios/public, así que este despliegue
-# NO COPIA NADA: solo deja la aplicación lista.
+# El Document Root del dominio apunta a la carpeta `public/` de este mismo
+# repositorio, asi que el despliegue NO COPIA NADA: solo deja la aplicacion
+# lista. Si alguna vez el sitio no reflejara los cambios despues de desplegar,
+# lo primero que hay que mirar es si el Document Root sigue apuntando aqui.
 #
 # Lo que NO hace, porque el servidor no tiene las herramientas:
-#   - composer install  → vendor/ se sube comprimido a mano
-#   - npm run build     → public/build/ se sube comprimido a mano
+#   - composer install  → vendor/ viaja dentro del propio repositorio
+#   - npm run build     → public/build/ tambien
 #
 # Si una tarea falla, cPanel aborta las siguientes y el sitio SE QUEDA EN
 # MANTENIMIENTO. Para levantarlo, en cPanel → Terminal:
-#   /opt/cpanel/ea-php82/root/usr/bin/php /home/USUARIO/comunitarios/artisan up
+#
+#   cd /home/comuonal/repositories/comunitarios && php artisan up
 # =============================================================================
 
 deployment:
   tasks:
-    - export DP=/home/USUARIO/comunitarios
+    # ── Donde esta el proyecto ───────────────────────────────────────────────
+    - export DP="$(pwd)"
+    - test -f "$DP/artisan" || export DP=/home/comuonal/repositories/comunitarios
 
-    # Nadie ve una página a medio migrar.
-    - /opt/cpanel/ea-php82/root/usr/bin/php $DP/artisan down --render="errors::503"
+    # ── Con que PHP ──────────────────────────────────────────────────────────
+    - export PHP="$(command -v php || true)"
+    - test -x "$PHP" || export PHP=/opt/cpanel/ea-php83/root/usr/bin/php
+    - test -x "$PHP" || export PHP=/opt/cpanel/ea-php82/root/usr/bin/php
 
-    # --force porque en producción migrate pide confirmación por teclado y aquí
-    # no hay nadie para dársela.
-    - /opt/cpanel/ea-php82/root/usr/bin/php $DP/artisan migrate --force
+    # Queda anotado en el registro del despliegue: si algo falla, lo primero
+    # que hay que mirar es si estas dos lineas dicen lo que deberian.
+    - echo "Desplegando $DP con $PHP ($($PHP -r 'echo PHP_VERSION;'))"
 
-    # config:clear ANTES de config:cache: si quedó una caché vieja de un .env
-    # anterior, config:cache la regeneraría a partir de valores ya obsoletos.
-    - /opt/cpanel/ea-php82/root/usr/bin/php $DP/artisan config:clear
-    - /opt/cpanel/ea-php82/root/usr/bin/php $DP/artisan config:cache
-    - /opt/cpanel/ea-php82/root/usr/bin/php $DP/artisan route:cache
-    - /opt/cpanel/ea-php82/root/usr/bin/php $DP/artisan view:cache
+    # ── El despliegue ────────────────────────────────────────────────────────
 
-    - /opt/cpanel/ea-php82/root/usr/bin/php $DP/artisan up
+    # Nadie ve una pagina a medio migrar.
+    - $PHP $DP/artisan down --render="errors::503"
+
+    # --force porque en produccion migrate pide confirmacion por teclado y
+    # aqui no hay nadie para darsela.
+    - $PHP $DP/artisan migrate --force
+
+    # config:clear ANTES de config:cache: si quedo una cache vieja de un .env
+    # anterior, config:cache la regeneraria a partir de valores ya obsoletos.
+    - $PHP $DP/artisan config:clear
+    - $PHP $DP/artisan config:cache
+    - $PHP $DP/artisan route:cache
+
+    # view:clear antes de view:cache: sin esto, una plantilla Blade que cambio
+    # —la portada, por ejemplo— se seguiria sirviendo compilada de antes.
+    - $PHP $DP/artisan view:clear
+    - $PHP $DP/artisan view:cache
+
+    - $PHP $DP/artisan up

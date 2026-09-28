@@ -116,36 +116,39 @@ cPanel → **Git™ Version Control** → **Create**.
 
 1. Activa **Clone a Repository**.
 2. **Clone URL**: la del repositorio.
-3. **Repository Path**: `/home/USUARIO/comunitarios`
+3. **Repository Path**: déjalo como cPanel lo propone,
+   `/home/USUARIO/repositories/comunitarios`. Es su carpeta por defecto para
+   repositorios y está **fuera de `public_html`**, que es justo lo que hace
+   falta.
 
-> ⚠️ **Fuera de `public_html`.** Ese `comunitarios` va colgando directamente de
-> tu carpeta personal, NO dentro de `public_html`. Si lo clonas dentro,
-> cualquiera podría descargarse el archivo de contraseñas escribiendo la URL.
-> Más adelante (paso 9) apuntaremos el dominio a la subcarpeta correcta.
+> ⚠️ **Nunca lo clones dentro de `public_html`.** Si el repositorio queda ahí,
+> cualquiera puede descargarse el archivo de contraseñas escribiendo la URL.
+> En el paso 9 apuntamos el dominio a la subcarpeta `public/` del repositorio,
+> que es la única que debe ser accesible.
 
 4. **Create**.
 
-**Comprobar:** en **File Manager** existe `/home/USUARIO/comunitarios` y dentro
+**Comprobar:** en **File Manager** existe `/home/USUARIO/repositories/comunitarios` y dentro
 hay carpetas como `app`, `config`, `public`, `routes`.
 
 ---
 
 ## 5. Subir y extraer `vendor.zip` y `build.zip`
 
-cPanel → **File Manager**, entra en `/home/USUARIO/comunitarios`.
+cPanel → **File Manager**, entra en `/home/USUARIO/repositories/comunitarios`.
 
 1. Botón **Upload** → sube **`vendor.zip`**.
 2. Vuelve a la carpeta, clic derecho sobre `vendor.zip` → **Extract**.
-   La ruta de destino tiene que ser `/home/USUARIO/comunitarios`.
+   La ruta de destino tiene que ser `/home/USUARIO/repositories/comunitarios`.
 3. Repite con **`build.zip`**, que se extrae dentro de `public/`.
-   Destino: `/home/USUARIO/comunitarios/public`.
+   Destino: `/home/USUARIO/repositories/comunitarios/public`.
 4. **Borra los dos `.zip`** cuando termines.
 
 **Comprobar** que existen exactamente estos dos archivos:
 
 ```
-/home/USUARIO/comunitarios/vendor/autoload.php
-/home/USUARIO/comunitarios/public/build/manifest.json
+/home/USUARIO/repositories/comunitarios/vendor/autoload.php
+/home/USUARIO/repositories/comunitarios/public/build/manifest.json
 ```
 
 Si alguno no está, la extracción se hizo en el sitio equivocado: lo más típico
@@ -157,7 +160,7 @@ es que quede `vendor/vendor/autoload.php`. Mueve la carpeta a su sitio.
 
 Este archivo guarda las contraseñas. Es el más delicado de todos.
 
-1. File Manager → entra en `/home/USUARIO/comunitarios`.
+1. File Manager → entra en `/home/USUARIO/repositories/comunitarios`.
 2. Arriba a la derecha, **Settings** → marca **Show Hidden Files (dotfiles)** →
    *Save*. Sin esto no verás los archivos que empiezan por punto.
 3. **+ File** → nómbralo exactamente **`.env`** → *Create New File*.
@@ -195,7 +198,7 @@ no se copia de ningún sitio.
 cPanel → **Terminal**:
 
 ```bash
-cd /home/USUARIO/comunitarios
+cd /home/USUARIO/repositories/comunitarios
 /opt/cpanel/ea-php83/root/usr/bin/php artisan key:generate --force
 ```
 
@@ -221,7 +224,7 @@ que empieza por `base64:`.
 cPanel → Terminal:
 
 ```bash
-cd /home/USUARIO/comunitarios
+cd /home/USUARIO/repositories/comunitarios
 chmod -R 775 storage bootstrap/cache
 
 # Comprobantes del canal QR: FUERA de public/, nadie los ve por URL.
@@ -254,11 +257,11 @@ cPanel → **Domains** → en la fila de `comunitarios.org`, **Manage**.
 En **Document Root**, escribe:
 
 ```
-/home/USUARIO/comunitarios/public
+/home/USUARIO/repositories/comunitarios/public
 ```
 
 ⚠️ Con **`/public` al final**. Es el paso que más se falla. Si apuntas el
-dominio a `/home/USUARIO/comunitarios` a secas, el archivo de contraseñas queda
+dominio a `/home/USUARIO/repositories/comunitarios` a secas, el archivo de contraseñas queda
 publicado en internet.
 
 Marca también **Force HTTPS Redirect** y guarda.
@@ -275,7 +278,7 @@ El panel no tiene registro abierto: sin este paso nadie puede entrar.
 cPanel → Terminal:
 
 ```bash
-cd /home/USUARIO/comunitarios
+cd /home/USUARIO/repositories/comunitarios
 /opt/cpanel/ea-php83/root/usr/bin/php artisan make:superadmin
 ```
 
@@ -314,7 +317,7 @@ aprueba. Sin él, las donaciones tardarían en confirmarse.
    `MP_WEBHOOK_SECRET` del `.env`.
 5. Vuelve a cachear la configuración:
    ```bash
-   cd /home/USUARIO/comunitarios
+   cd /home/USUARIO/repositories/comunitarios
    /opt/cpanel/ea-php83/root/usr/bin/php artisan config:cache
    ```
 
@@ -337,7 +340,7 @@ cPanel → **Cron Jobs**. En *Add New Cron Job*:
 - **Command**:
 
 ```
-/opt/cpanel/ea-php83/root/usr/bin/php /home/USUARIO/comunitarios/artisan schedule:run >> /dev/null 2>&1
+/opt/cpanel/ea-php83/root/usr/bin/php /home/USUARIO/repositories/comunitarios/artisan schedule:run >> /dev/null 2>&1
 ```
 
 **Add New Cron Job**.
@@ -382,7 +385,7 @@ Un 500 es «algo falló y no te voy a decir qué». Es correcto que no lo diga e
 público. El motivo está en el registro:
 
 ```bash
-tail -n 50 /home/USUARIO/comunitarios/storage/logs/laravel.log
+tail -n 50 /home/USUARIO/repositories/comunitarios/storage/logs/laravel.log
 ```
 
 Sin Terminal: File Manager → `storage/logs` → clic derecho sobre el archivo →
@@ -423,14 +426,14 @@ después.
 medias:
 
 ```bash
-cd /home/USUARIO/comunitarios
+cd /home/USUARIO/repositories/comunitarios
 /opt/cpanel/ea-php83/root/usr/bin/php artisan up
 ```
 
 **Si la versión nueva está rota y quieres la anterior:**
 
 ```bash
-cd /home/USUARIO/comunitarios
+cd /home/USUARIO/repositories/comunitarios
 git log --oneline -5          # anota el código de la versión que sí funcionaba
 git checkout <codigo>
 php artisan config:clear && php artisan config:cache && php artisan up
@@ -476,7 +479,7 @@ del código.
 **Después de cambiarlas, siempre:**
 
 ```bash
-cd /home/USUARIO/comunitarios
+cd /home/USUARIO/repositories/comunitarios
 /opt/cpanel/ea-php83/root/usr/bin/php artisan config:clear
 /opt/cpanel/ea-php83/root/usr/bin/php artisan config:cache
 ```
