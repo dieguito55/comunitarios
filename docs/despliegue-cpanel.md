@@ -271,6 +271,40 @@ Si ves un error 500, ve al paso 14.
 
 ---
 
+### ⚠️ Esta instalación tiene dos carpetas públicas
+
+En cPanel, el Document Root de `comunitarios.org` es **`~/public_html`**, no el
+`public/` del repositorio. La aplicación se ejecuta desde
+`~/repositories/comunitarios`, pero lo que sirve el navegador —el CSS, el
+JavaScript, las imágenes— sale de `~/public_html`.
+
+Eso significa que **actualizar el código no basta**: si `~/public_html/build/`
+se queda con los archivos compilados de una versión anterior, el navegador pide
+un CSS que ya no existe y Laravel responde con un **500 en todo el sitio**, con
+este mensaje en el registro:
+
+```
+Unable to locate file in Vite manifest: resources/js/publico.js
+```
+
+Pasó el 28/09/2026. Por eso el `.cpanel.yml` incluye ahora dos tareas de
+`rsync` que sincronizan `build/` y `media/` en cada despliegue.
+
+**Si alguna vez vuelve a pasar**, esto lo arregla a mano:
+
+```bash
+cd ~/repositories/comunitarios
+rsync -a --delete public/build/ ~/public_html/build/
+```
+
+**La solución de fondo** es apuntar el Document Root directamente a
+`~/repositories/comunitarios/public`. Entonces desaparece la duplicidad y las
+dos tareas de `rsync` se pueden borrar del `.cpanel.yml`. Antes de hacerlo hay
+que mirar qué contiene `~/public_html/index.php`, porque en esta instalación
+redefine la carpeta pública de Laravel y ese ajuste se perdería.
+
+---
+
 ## 10. Crear el primer administrador
 
 El panel no tiene registro abierto: sin este paso nadie puede entrar.

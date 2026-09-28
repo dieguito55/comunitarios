@@ -17,10 +17,21 @@
 #     que responde a `php`. Si ahi no hubiera ninguno, se prueban las rutas de
 #     EasyApache para 8.3 y 8.2.
 #
-# El Document Root del dominio apunta a la carpeta `public/` de este mismo
-# repositorio, asi que el despliegue NO COPIA NADA: solo deja la aplicacion
-# lista. Si alguna vez el sitio no reflejara los cambios despues de desplegar,
-# lo primero que hay que mirar es si el Document Root sigue apuntando aqui.
+# ⚠️ ESTA INSTALACION TIENE DOS CARPETAS PUBLICAS
+#
+# El Document Root del dominio es ~/public_html, NO el `public/` de este
+# repositorio. La aplicacion corre desde aqui, pero los archivos que sirve el
+# navegador salen de alla, y Laravel tiene `public_path()` apuntando alli.
+#
+# Por eso el despliegue SI copia: hay que sincronizar `public/build/`, o el
+# navegador pide un CSS o un JS que ya no existe y Laravel responde
+# «Unable to locate file in Vite manifest» con un 500 en todo el sitio.
+# Nos paso el 28/09/2026: el manifest de ~/public_html se habia quedado en una
+# version anterior al panel de administracion y al sitio de donaciones.
+#
+# Si algun dia el Document Root se apunta directamente a
+# <repositorio>/public, estas dos tareas de rsync dejan de hacer falta y se
+# pueden borrar.
 #
 # Lo que NO hace, porque el servidor no tiene las herramientas:
 #   - composer install  → vendor/ viaja dentro del propio repositorio
@@ -66,5 +77,16 @@ deployment:
     # —la portada, por ejemplo— se seguiria sirviendo compilada de antes.
     - $PHP $DP/artisan view:clear
     - $PHP $DP/artisan view:cache
+
+    # ── Sincronizar la carpeta publica de verdad ────────────────────────────
+    - export PUB="$HOME/public_html"
+
+    # build/ se regenera entero en cada compilacion, asi que --delete: los
+    # bundles con hash viejo tienen que desaparecer o la carpeta crece sin fin.
+    - test -f "$PUB/index.php" && rsync -a --delete "$DP/public/build/" "$PUB/build/" && echo "build/ sincronizado en $PUB" || echo "AVISO: no se encontro $PUB/index.php; revisa el Document Root"
+
+    # media/ sin --delete: son las imagenes y videos del repositorio, y ahi al
+    # lado viven tambien las portadas que sube el panel.
+    - test -d "$DP/public/media" && rsync -a "$DP/public/media/" "$PUB/media/" || true
 
     - $PHP $DP/artisan up
