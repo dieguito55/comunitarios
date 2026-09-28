@@ -1017,3 +1017,52 @@ body.admin {
         transition: none !important;
     }
 }
+
+/* ── «Por verificar» en el panel ───────────────────────────────────────────
+   La cola de trabajo, no las cuentas. Este dinero no está en `recaudado` y no
+   lo estará hasta que alguien mire el comprobante. */
+
+.admin-tarjeta--atencion {
+    border-color: var(--admin-aviso-borde);
+    background: var(--admin-aviso-fondo);
+}
+
+.admin-tarjeta--atencion .admin-cifra { color: var(--yellow-texto); }
+.admin-tarjeta--atencion .boton { margin-top: var(--espacio-3); }
+
+.admin-pendiente { margin: var(--espacio-2) 0 0; font-size: var(--texto-sm); }
+
+.admin-pendiente a {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--espacio-2);
+    color: var(--yellow-texto);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.admin-pendiente a:hover { text-decoration: underline; }
+
+/* ── La cola, con una sola mano ────────────────────────────────────────────
+   Es la pantalla que más se va a usar, y a menudo desde el móvil mientras se
+   comprueba un movimiento en la app del banco. Por debajo de 600 px el
+   diálogo se ancla abajo: el pulgar llega a los botones sin cambiar de mano,
+   y el comprobante queda arriba, a la vista, mientras se decide. */
+
+@media (max-width: 599px) {
+    .admin-dialogo {
+        width: 100%;
+        max-width: none;
+        margin: auto auto 0;
+        border-radius: var(--radio-lg) var(--radio-lg) 0 0;
+    }
+
+    .admin-dialogo form { padding: var(--espacio-5) var(--espacio-4); }
+
+    /* Las acciones en columna y a ancho completo: dianas grandes. */
+    .admin-dialogo__acciones { flex-direction: column; }
+    .admin-dialogo__acciones .boton { width: 100%; min-height: 48px; }
+
+    .admin-visor { width: 100%; max-width: none; margin: auto auto 0; border-radius: var(--radio-lg) var(--radio-lg) 0 0; }
+    .admin-visor__lienzo { max-height: 60vh; }
+}

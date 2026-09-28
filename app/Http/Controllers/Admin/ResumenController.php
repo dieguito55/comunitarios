@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\EstadoFondo;
 use App\Http\Controllers\Controller;
 use App\Models\Fondo;
+use App\Services\Donaciones\CalcularPendientes;
 use App\Services\Fondos\CalcularMetricasFondo;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -23,7 +24,10 @@ use Illuminate\View\View;
  */
 final class ResumenController extends Controller
 {
-    public function __construct(private readonly CalcularMetricasFondo $metricas) {}
+    public function __construct(
+        private readonly CalcularMetricasFondo $metricas,
+        private readonly CalcularPendientes $pendientes,
+    ) {}
 
     public function __invoke(): View
     {
@@ -38,6 +42,10 @@ final class ResumenController extends Controller
             'tarjetas' => $tarjetas,
             'totalRecaudado' => (float) $fondos->sum(static fn (Fondo $f): float => (float) $f->recaudado),
             'totalDonaciones' => (int) $fondos->sum('donaciones_count'),
+            // Dinero recibido por Yape o Plin que espera verificación. NO
+            // está en `recaudado`: es la cola de trabajo, no las cuentas.
+            'pendientes' => $this->pendientes->totales(),
+
             'descuadres' => $this->descuadres(),
             'sinRedactar' => $this->fondosActivosSinRedactar($fondos),
         ]);

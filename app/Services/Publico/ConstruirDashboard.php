@@ -6,6 +6,7 @@ namespace App\Services\Publico;
 
 use App\Models\Donacion;
 use App\Models\Fondo;
+use App\Services\Donaciones\CalcularPendientes;
 use App\Services\Fondos\CalcularMetricasFondo;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -35,7 +36,10 @@ use Illuminate\Support\Str;
  */
 final class ConstruirDashboard
 {
-    public function __construct(private readonly CalcularMetricasFondo $metricas) {}
+    public function __construct(
+        private readonly CalcularMetricasFondo $metricas,
+        private readonly CalcularPendientes $pendientes,
+    ) {}
 
     /** @return array<string, mixed> */
     public function __invoke(): array
@@ -77,6 +81,7 @@ final class ConstruirDashboard
     private function totales(Collection $fondos): array
     {
         $idsVisibles = $fondos->pluck('id')->all();
+        $pendiente = $this->pendientesDe($idsVisibles);
 
         return [
             'recaudado' => round((float) $fondos->sum(static fn (Fondo $f): float => (float) $f->recaudado), 2),
@@ -90,8 +95,47 @@ final class ConstruirDashboard
                 ->distinct()
                 ->count('correo'),
 
+            /*
+             * Recibido por Yape o Plin y todavía sin verificar.
+             *
+             * Viaja APARTE y nunca se suma a `recaudado`. Publicar como
+             * recaudado un dinero que nadie ha comprobado significa que el
+             * total baja en cuanto un comprobante resulta falso, y un contador
+             * que baja destruye la confianza en una fundación.
+             */
+            'pendiente' => $pendiente['monto'],
+            'pendientes_aportes' => $pendiente['aportes'],
+
             'moneda' => (string) ($fondos->first()?->moneda ?? config('mercadopago.currency', 'PEN')),
         ];
+    }
+
+    /**
+     * Lo pendiente de los fondos visibles, sumado.
+     *
+     * Se filtra por los visibles y no se coge el total a secas: un fondo en
+     * borrador puede tener aportes esperando, y no tiene por qué salir en una
+     * cifra pública de un fondo que todavía no se ha publicado.
+     *
+     * @param  list<int>  $idsVisibles
+     * @return array{monto: float, aportes: int}
+     */
+    private function pendientesDe(array $idsVisibles): array
+    {
+        if ($idsVisibles === []) {
+            return ['monto' => 0.0, 'aportes' => 0];
+        }
+
+        $porFondo = $this->pendientes->totales()['por_fondo'];
+        $monto = 0.0;
+        $aportes = 0;
+
+        foreach ($idsVisibles as $id) {
+            $monto += $porFondo[$id]['monto'] ?? 0.0;
+            $aportes += $porFondo[$id]['aportes'] ?? 0;
+        }
+
+        return ['monto' => round($monto, 2), 'aportes' => $aportes];
     }
 
     /** @return array<string, mixed> */
@@ -120,8 +164,13 @@ final class ConstruirDashboard
 
             // Sin meta no hay porcentaje: la barra se oculta, en vez de
             // enseñar un 0 % que parecería un fracaso.
+            // Aparte del recaudado, siempre. Nunca sumados.
+            'pendiente' => $m['pendiente'],
+            'pendientes_aportes' => $m['pendientes_aportes'],
+
             'meta' => $m['meta'],
             'porcentaje' => $m['porcentaje'],
+            'porcentaje_pendiente' => $m['porcentaje_pendiente'],
             'moneda' => $m['moneda'],
         ];
     }

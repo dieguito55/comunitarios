@@ -883,6 +883,78 @@ section[id],footer[id] { scroll-margin-top: 78px; }
 
 .don-progreso__texto span:last-child { color: var(--muted); font-weight: 600; }
 
+/* ── «Por verificar» ───────────────────────────────────────────────────────
+   Dinero recibido por Yape o Plin que nadie ha comprobado todavía. Jerarquía
+   deliberadamente MENOR que la cifra confirmada: existe, se ve, y se entiende
+   que no cuenta todavía. */
+
+.don-pendiente {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--espacio-2);
+    margin-top: var(--espacio-2);
+    padding: var(--espacio-2) var(--espacio-3);
+    border-radius: var(--radio-sm);
+    background: var(--yellow-tenue);
+    color: var(--yellow-texto);
+    font-size: var(--texto-sm);
+    line-height: var(--alto-medio);
+}
+
+.don-pendiente svg { width: 15px; flex: none; margin-top: 2px; }
+.don-pendiente strong { font-weight: 800; font-variant-numeric: tabular-nums; }
+
+.don-pendiente small {
+    display: block;
+    margin-top: 1px;
+    color: var(--muted);
+    font-size: var(--texto-xs);
+    font-weight: 500;
+}
+
+/* Sobre las tarjetas navy del resumen y de la portada. */
+.don-pendiente--claro {
+    background: color-mix(in srgb, var(--yellow) 16%, transparent);
+    color: var(--yellow);
+}
+
+.don-pendiente--claro small { color: var(--sobre-oscuro-tenue); }
+
+/* El tramo pendiente de la barra: continúa al confirmado, en rayado para que
+   se lea como «todavía no» sin tener que mirar la leyenda.
+
+   La raya usa --yellow-texto y no --yellow: el amarillo de marca sobre la
+   pista clara da 1.50:1 y el rayado se pierde. Este llega a 3.78:1, que es lo
+   que pide la norma para algo que comunica información. */
+.don-progreso__pendiente {
+    display: block;
+    height: 100%;
+    background: repeating-linear-gradient(
+        45deg,
+        var(--yellow-texto),
+        var(--yellow-texto) 5px,
+        color-mix(in srgb, var(--yellow) 30%, var(--white)) 5px,
+        color-mix(in srgb, var(--yellow) 30%, var(--white)) 10px
+    );
+    transition: width 900ms var(--curva);
+}
+
+/* Sobre fondo oscuro la pista es clara y el contraste se invierte: ahí la raya
+   vuelve a ser el amarillo de marca, que sobre navy da 7.84:1. */
+.don-resumen__progreso .don-progreso__pendiente,
+.featured-card .don-progreso__pendiente {
+    background: repeating-linear-gradient(
+        45deg,
+        var(--yellow),
+        var(--yellow) 5px,
+        transparent 5px,
+        transparent 10px
+    );
+}
+
+/* Los dos tramos van en fila dentro de la misma pista. */
+.don-progreso { display: flex; }
+
 /* ── Campos ────────────────────────────────────────────────────────────── */
 
 .don-rejilla-2 {
@@ -1615,7 +1687,12 @@ fieldset.don-campo { margin: 0 0 var(--espacio-5); padding: 0; border: 0; }
 }
 
 /* La insignia de estado: el JavaScript emite la clase y el CSS decide el
-   color. Nunca al revés. */
+   color. Nunca al revés.
+
+   MISMA ANATOMÍA QUE EN EL PANEL (admin.css): píldora, punto de color a la
+   izquierda y los tokens de contraste. Un «pendiente» tiene que reconocerse
+   igual en los dos sitios — quien administra ve las dos pantallas el mismo
+   día, y dos lenguajes distintos para el mismo estado obligan a traducir. */
 .estado {
     display: inline-flex;
     align-items: center;
@@ -1632,10 +1709,26 @@ fieldset.don-campo { margin: 0 0 var(--espacio-5); padding: 0; border: 0; }
 
 .estado[hidden] { display: none; }
 
-.estado--aprobado { background: var(--teal-tenue); color: var(--teal-texto); }
-.estado--rechazado { background: var(--coral-tenue); color: var(--coral-texto); }
+.estado::before {
+    width: 6px;
+    height: 6px;
+    flex: none;
+    border-radius: var(--radio-full);
+    background: currentColor;
+    content: '';
+}
+
+.estado--aprobado,
+.estado--activo { background: var(--teal-tenue); color: var(--teal-texto); }
+
+.estado--rechazado,
+.estado--cerrado { background: var(--coral-tenue); color: var(--coral-texto); }
+
 .estado--en_proceso,
-.estado--pendiente { background: var(--yellow-tenue); color: var(--yellow-texto); }
+.estado--pendiente,
+.estado--pausado { background: var(--yellow-tenue); color: var(--yellow-texto); }
+
+.estado--borrador { background: var(--superficie-hundida); color: var(--muted); }
 
 .don-resultado--aprobado .don-resultado__orbe {
     background: linear-gradient(135deg, var(--teal), color-mix(in srgb, var(--teal) 58%, var(--blue)));
@@ -2110,4 +2203,53 @@ fieldset.don-campo { margin: 0 0 var(--espacio-5); padding: 0; border: 0; }
     .don-girador { animation: none; }
 
     .don-esqueleto { background: var(--line); }
+}
+
+/* ── Resumen de errores ────────────────────────────────────────────────────
+   Nace oculto y lo llena el JavaScript al intentar enviar con campos
+   incompletos. Existe por un fallo real: alguien rellenó todo el formulario,
+   olvidó marcar «Acepto los términos», pulsó el botón y no pasó nada visible.
+   Un formulario que no hace nada es peor que uno que falla con mensaje. */
+
+.don-errores {
+    margin-bottom: var(--espacio-5);
+    padding: var(--espacio-5);
+    border: 1.5px solid var(--coral);
+    border-radius: var(--radio-md);
+    background: var(--coral-tenue);
+}
+
+.don-errores[hidden] { display: none; }
+
+.don-errores h2 {
+    display: flex;
+    align-items: center;
+    gap: var(--espacio-2);
+    margin: 0 0 var(--espacio-3);
+    color: var(--coral-texto);
+    font-size: var(--texto-lg);
+    font-weight: 800;
+    letter-spacing: var(--traqueo-titulo);
+}
+
+.don-errores svg { width: 20px; flex: none; }
+
+.don-errores ul {
+    margin: 0;
+    padding-left: var(--espacio-5);
+    color: var(--ink);
+    font-size: var(--texto-sm);
+    line-height: var(--alto-medio);
+}
+
+.don-errores li + li { margin-top: var(--espacio-2); }
+.don-errores a { color: var(--coral-texto); font-weight: 700; }
+
+/* La casilla de términos, cuando falla, se marca como cualquier otro campo. */
+.don-casilla--campo { grid-template-columns: 22px minmax(0, 1fr); }
+.don-casilla--campo .don-campo__error { grid-column: 2; margin-top: var(--espacio-2); }
+
+.don-casilla--campo.don-campo--error input {
+    border-color: var(--coral);
+    background: var(--coral-tenue);
 }

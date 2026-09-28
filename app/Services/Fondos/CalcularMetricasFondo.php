@@ -6,6 +6,7 @@ namespace App\Services\Fondos;
 
 use App\Models\Donacion;
 use App\Models\Fondo;
+use App\Services\Donaciones\CalcularPendientes;
 use Illuminate\Support\Facades\Cache;
 
 /**
@@ -29,6 +30,8 @@ use Illuminate\Support\Facades\Cache;
  */
 final class CalcularMetricasFondo
 {
+    public function __construct(private readonly CalcularPendientes $pendientes) {}
+
     /** Suficiente para absorber el refresco del dashboard cada 30 s. */
     private const SEGUNDOS_DE_CACHE = 30;
 
@@ -39,14 +42,19 @@ final class CalcularMetricasFondo
      *     recaudado: float,
      *     donaciones: int,
      *     donantes_unicos: int,
+     *     pendiente: float,
+     *     pendientes_aportes: int,
      *     meta: float|null,
      *     porcentaje: float|null,
+     *     porcentaje_pendiente: float|null,
      *     moneda: string,
      *     acepta_donaciones: bool
      * }
      */
     public function __invoke(Fondo $fondo): array
     {
+        $pendiente = $this->pendientes->porFondo($fondo);
+
         return [
             'fondo_id' => (int) $fondo->id,
             'slug' => (string) $fondo->slug,
@@ -58,11 +66,41 @@ final class CalcularMetricasFondo
             // Este sí se calcula, por lo explicado arriba.
             'donantes_unicos' => $this->donantesUnicos($fondo),
 
+            // Recibido por Yape o Plin y todavía sin verificar. NO entra en
+            // `recaudado`: es una cifra aparte, con su propia etiqueta.
+            'pendiente' => $pendiente['monto'],
+            'pendientes_aportes' => $pendiente['aportes'],
+
             'meta' => $fondo->meta !== null ? (float) $fondo->meta : null,
             'porcentaje' => $fondo->porcentajeDeMeta(),
+
+            // El tramo de la barra que corresponde a lo pendiente. El
+            // porcentaje que se ANUNCIA sigue siendo solo el confirmado.
+            'porcentaje_pendiente' => $this->porcentajePendiente($fondo, $pendiente['monto']),
             'moneda' => (string) $fondo->moneda,
             'acepta_donaciones' => $fondo->aceptaDonaciones(),
         ];
+    }
+
+    /**
+     * Qué porción de la barra ocupa lo pendiente, a continuación de lo
+     * confirmado y sin pasarse del 100 %.
+     *
+     * Devuelve null si no hay meta —entonces no hay barra— o si no hay nada
+     * pendiente: un tramo de 0 % solo añade ruido.
+     */
+    private function porcentajePendiente(Fondo $fondo, float $pendiente): ?float
+    {
+        $meta = $fondo->meta !== null ? (float) $fondo->meta : null;
+
+        if ($meta === null || $meta <= 0 || $pendiente <= 0) {
+            return null;
+        }
+
+        $confirmado = $fondo->porcentajeDeMeta() ?? 0.0;
+        $margen = max(0.0, 100.0 - $confirmado);
+
+        return round(min($margen, ($pendiente / $meta) * 100), 2);
     }
 
     /**

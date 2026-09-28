@@ -34,6 +34,7 @@ export function iniciarDonacion() {
     configurarSeleccionDeFondo(formulario, paso2);
     configurarMontosSugeridos(formulario, campoMonto);
     configurarResumen(formulario, campoMonto);
+    limpiarAlCorregir(formulario);
 
     formulario.addEventListener('submit', async (evento) => {
         evento.preventDefault();
@@ -41,13 +42,13 @@ export function iniciarDonacion() {
         limpiarErrores(formulario, avisoGeneral);
 
         const datos = recogerDatos(formulario);
-        const errorLocal = validarEnElNavegador(datos, formulario);
+        const errores = validarEnElNavegador(datos, formulario);
 
         // La validación del navegador REFLEJA la del servidor, no la
         // reemplaza: ahorra un viaje, nada más. El servidor vuelve a validarlo
         // todo porque esta comprobación se puede saltar.
-        if (errorLocal) {
-            mostrarAviso(avisoGeneral, errorLocal, 'error');
+        if (Object.keys(errores).length > 0) {
+            señalarErrores(formulario, errores);
 
             return;
         }
@@ -74,8 +75,12 @@ export function iniciarDonacion() {
 
         bloquear(botones, false);
 
-        if (estado === 422 && respuesta && Array.isArray(respuesta.errores)) {
-            marcarCamposConError(formulario, respuesta);
+        // Los errores del servidor se pintan igual que los del navegador: el
+        // donante no tiene por qué notar de dónde vino cada uno.
+        if (estado === 422 && respuesta && respuesta.campos) {
+            señalarErrores(formulario, respuesta.campos);
+
+            return;
         }
 
         mostrarAviso(
@@ -277,43 +282,90 @@ function recogerDatos(formulario) {
 }
 
 /**
- * Espejo de la validación del servidor. Los límites vienen del propio
- * formulario (`data-*`), que a su vez los recibió de config: así no hay dos
- * sitios donde cambiar un mínimo.
+ * Espejo de la validación del servidor, CAMPO POR CAMPO.
+ *
+ * ── POR QUÉ DEVUELVE UN MAPA Y NO UN MENSAJE ────────────────────────────────
+ *
+ * Antes devolvía el primer error que encontrara y lo pintaba en un aviso
+ * general. Eso produjo un fallo real: alguien rellenó todo el formulario,
+ * olvidó marcar «Acepto los términos», pulsó el botón y no pasó NADA visible
+ * junto a la casilla. Se quedó atascada sin saber por qué.
+ *
+ * Ahora se devuelven todos los errores a la vez, con el nombre del campo al
+ * que pertenece cada uno, para poder marcarlos todos, listarlos arriba y
+ * llevar el foco al primero.
+ *
+ * Los límites vienen del propio formulario (`data-*`), que a su vez los recibió
+ * de config: así no hay dos sitios donde cambiar un mínimo. Y los textos dicen
+ * QUÉ HACER, no que algo «es inválido».
+ *
+ * @returns {Object<string,string>} campo → mensaje
  */
 function validarEnElNavegador(datos, formulario) {
     const minimo = Number(formulario.dataset.montoMinimo) || 0;
     const maximo = Number(formulario.dataset.montoMaximo) || Infinity;
     const monto = Number(String(datos.monto).replace(',', '.'));
+    const errores = {};
 
     if (!datos.fondo_id) {
-        return 'Elige a qué fondo quieres aportar.';
+        errores.fondo_id = 'Elige a qué proyecto quieres aportar.';
+    }
+
+    if (datos.nombre.length < 3) {
+        errores.nombre = 'Escribe tu nombre completo, al menos 3 letras.';
+    }
+
+    if (!/^[A-Z0-9-]{5,20}$/.test(datos.documento)) {
+        errores.documento = 'El documento solo puede llevar letras, números y guiones, entre 5 y 20 caracteres. '
+            + 'Un DNI son 8 dígitos; un RUC, 11.';
+    }
+
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(datos.correo)) {
+        errores.correo = 'El correo no parece válido. Revisa que tenga @ y un dominio, como nombre@correo.com.';
     }
 
     if (!Number.isFinite(monto) || monto <= 0) {
-        return 'Escribe cuánto quieres donar.';
-    }
-
-    if (monto < minimo) {
-        return `El monto mínimo es ${minimo}.`;
-    }
-
-    if (monto > maximo) {
-        return `El monto máximo por donación es ${maximo}.`;
+        errores.monto = 'Escribe cuánto quieres donar, solo con números.';
+    } else if (monto < minimo) {
+        errores.monto = `El monto mínimo es ${minimo} y el máximo ${maximo}.`;
+    } else if (monto > maximo) {
+        errores.monto = `El monto máximo por donación es ${maximo}. Si quieres aportar más, escríbenos.`;
     }
 
     if (!datos.acepta_terminos) {
-        return 'Debes aceptar los términos y la política de privacidad.';
+        errores.acepta_terminos = 'Necesitas aceptar los términos y la política de privacidad para continuar.';
     }
 
-    return '';
+    return errores;
 }
 
-/** Marca los campos que el servidor rechazó, para que se vean de un vistazo. */
-function marcarCamposConError(formulario, respuesta) {
-    const campos = respuesta.campos || {};
+/**
+ * Pinta TODOS los errores, lista un resumen arriba y lleva el foco al primero.
+ *
+ * El desplazamiento no es un adorno: en un móvil, el campo que falla puede
+ * estar tres pantallas más arriba, y un formulario que «no hace nada» al
+ * pulsar el botón es exactamente el fallo que esto viene a corregir.
+ */
+export function señalarErrores(formulario, errores) {
+    limpiarErrores(formulario, formulario.querySelector('[data-donacion-aviso]'));
 
-    Object.keys(campos).forEach((nombre) => {
+    const nombres = Object.keys(errores);
+
+    if (nombres.length === 0) {
+        return;
+    }
+
+    // Se despliega el paso 2 si el error está ahí dentro: marcar un campo
+    // oculto no ayuda a nadie.
+    const paso2 = document.querySelector('[data-paso="2"]');
+
+    if (paso2 && paso2.hidden && nombres.some((n) => n !== 'fondo_id')) {
+        paso2.hidden = false;
+    }
+
+    let primero = null;
+
+    nombres.forEach((nombre) => {
         const contenedor = formulario.querySelector(`[data-campo="${nombre}"]`);
 
         if (!contenedor) {
@@ -325,15 +377,63 @@ function marcarCamposConError(formulario, respuesta) {
         const hueco = contenedor.querySelector('[data-campo-error]');
 
         if (hueco) {
-            hueco.innerHTML = escaparHtml(campos[nombre]);
+            hueco.textContent = errores[nombre];
         }
 
         const control = contenedor.querySelector('input, select, textarea');
 
         if (control) {
             control.setAttribute('aria-invalid', 'true');
+
+            if (hueco && hueco.id) {
+                control.setAttribute('aria-errormessage', hueco.id);
+            }
+
+            if (!primero) {
+                primero = control;
+            }
         }
     });
+
+    pintarResumen(formulario, errores);
+
+    if (primero) {
+        // El desplazamiento primero y el foco después: al revés, algunos
+        // navegadores saltan de golpe y se pierde de vista el resumen.
+        primero.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        window.setTimeout(() => primero.focus({ preventScroll: true }), 220);
+    }
+}
+
+/**
+ * Resumen arriba del formulario, con un enlace a cada campo.
+ *
+ * `role="alert"` para que un lector de pantalla lo anuncie sin que haya que ir
+ * a buscarlo. Los enlaces son de verdad: quien navega con teclado llega al
+ * campo con una pulsación.
+ */
+function pintarResumen(formulario, errores) {
+    const resumen = formulario.querySelector('[data-resumen-errores]');
+    const lista = formulario.querySelector('[data-resumen-errores-lista]');
+
+    if (!resumen || !lista) {
+        return;
+    }
+
+    lista.innerHTML = Object.keys(errores)
+        .map((nombre) => {
+            const contenedor = formulario.querySelector(`[data-campo="${nombre}"]`);
+            const control = contenedor ? contenedor.querySelector('input, select, textarea') : null;
+            const texto = escaparHtml(errores[nombre]);
+
+            return control && control.id
+                ? `<li><a href="#${escaparHtml(control.id)}">${texto}</a></li>`
+                : `<li>${texto}</li>`;
+        })
+        .join('');
+
+    resumen.hidden = false;
+    resumen.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 function limpiarErrores(formulario, avisoGeneral) {
@@ -349,7 +449,44 @@ function limpiarErrores(formulario, avisoGeneral) {
 
     formulario.querySelectorAll('[aria-invalid="true"]').forEach((control) => {
         control.removeAttribute('aria-invalid');
+        control.removeAttribute('aria-errormessage');
     });
+
+    const resumen = formulario.querySelector('[data-resumen-errores]');
+
+    if (resumen) {
+        resumen.hidden = true;
+    }
+}
+
+/**
+ * El error de un campo desaparece en cuanto se corrige, sin esperar a
+ * reenviar.
+ *
+ * Un mensaje que sigue en rojo después de haber arreglado el campo hace dudar
+ * de si el arreglo sirvió, y lleva a reenviar «por si acaso».
+ */
+export function limpiarAlCorregir(formulario) {
+    const quitar = (evento) => {
+        const contenedor = evento.target.closest('[data-campo]');
+
+        if (!contenedor || !contenedor.classList.contains('don-campo--error')) {
+            return;
+        }
+
+        contenedor.classList.remove('don-campo--error');
+        evento.target.removeAttribute('aria-invalid');
+        evento.target.removeAttribute('aria-errormessage');
+
+        const hueco = contenedor.querySelector('[data-campo-error]');
+
+        if (hueco) {
+            hueco.textContent = '';
+        }
+    };
+
+    formulario.addEventListener('input', quitar);
+    formulario.addEventListener('change', quitar);
 }
 
 function mostrarAviso(nodo, mensaje, tono) {

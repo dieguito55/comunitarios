@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\CanalPago;
 use App\Enums\EstadoDonacion;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\RevertirVerificacionRequest;
 use App\Http\Requests\Admin\VerificarDonacionRequest;
 use App\Models\AdminUser;
 use App\Models\Donacion;
@@ -44,10 +45,11 @@ final class VerificacionController extends Controller
 
         $estado = $this->estadoFiltrado($peticion);
         $fondoId = (int) $peticion->query('fondo', 0);
+        $canal = $this->canalFiltrado($peticion);
 
         $consulta = Donacion::query()
-            ->with(['fondo', 'verificadoPor'])
-            ->where('canal_pago', CanalPago::QR_MANUAL)
+            ->with(['fondo', 'verificadoPor', 'revertidoPor'])
+            ->where('canal_pago', $canal)
             ->when($estado !== null, fn ($q) => $q->where('estado', $estado))
             ->when($fondoId > 0, fn ($q) => $q->where('fondo_id', $fondoId))
 
@@ -59,6 +61,7 @@ final class VerificacionController extends Controller
             'fondos' => Fondo::query()->ordenados()->get(),
             'estadoActivo' => $estado,
             'fondoActivo' => $fondoId,
+            'canalActivo' => $canal,
             'pendientes' => self::pendientes(),
         ]);
     }
@@ -132,6 +135,40 @@ final class VerificacionController extends Controller
         return back()->with('exito', 'Rechazada. Los contadores no se han movido.');
     }
 
+    /**
+     * Deshace una verificación. Solo superadmin (DonacionPolicy).
+     *
+     * No borra nada: la donación vuelve a `pendiente` y queda constancia de
+     * quién deshizo qué y por qué. Una donación es un registro contable y
+     * borrarla haría desaparecer el dinero del historial sin rastro.
+     */
+    public function revertir(RevertirVerificacionRequest $peticion, Donacion $donacion): RedirectResponse
+    {
+        $this->authorize('revertir', $donacion);
+
+        /** @var AdminUser $admin */
+        $admin = Auth::guard('admin')->user();
+
+        $estadoPrevio = $donacion->estado;
+        $resultado = $this->verificar->revertir($donacion, $admin, $peticion->motivo());
+
+        if (! $resultado->fueDecidida()) {
+            return back()->with('error', $resultado->yaEstabaVerificada()
+                ? 'Esa donación ya había vuelto a pendiente. No se ha cambiado nada.'
+                : 'No encontramos esa donación.');
+        }
+
+        // El importe restado solo tiene sentido contarlo si había algo sumado.
+        if ($estadoPrevio === EstadoDonacion::APROBADO) {
+            return back()->with('exito', sprintf(
+                'Verificación revertida. Se restaron %s del fondo y la donación vuelve a la cola.',
+                number_format(abs($resultado->movimiento), 2),
+            ));
+        }
+
+        return back()->with('exito', 'Verificación revertida. La donación vuelve a la cola; los contadores no se movieron.');
+    }
+
     /** Cuántas esperan. Lo usa también el resumen del panel. */
     public static function pendientes(): int
     {
@@ -139,6 +176,20 @@ final class VerificacionController extends Controller
             ->where('canal_pago', CanalPago::QR_MANUAL)
             ->where('estado', EstadoDonacion::PENDIENTE)
             ->count();
+    }
+
+    /**
+     * Qué canal se está mirando.
+     *
+     * Por defecto el manual, que es el que tiene trabajo. El de Mercado Pago se
+     * puede consultar —a veces hace falta ver en qué estado quedó un pago con
+     * tarjeta— pero ahí no hay nada que decidir: su estado lo manda la
+     * pasarela.
+     */
+    private function canalFiltrado(Request $peticion): CanalPago
+    {
+        return CanalPago::tryFrom(trim((string) $peticion->query('canal', '')))
+            ?? CanalPago::QR_MANUAL;
     }
 
     /** El filtro de estado, o null para «todos». */

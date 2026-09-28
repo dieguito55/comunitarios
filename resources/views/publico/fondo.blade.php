@@ -51,6 +51,12 @@
                 <div>
                     <dt>Recaudado</dt>
                     <dd data-fondo-recaudado data-contador>{{ $simboloMoneda }} {{ number_format($metricas['recaudado'], 2) }}</dd>
+                    @include('publico.componentes.pendiente', [
+                        'monto' => $metricas['pendiente'],
+                        'aportes' => $metricas['pendientes_aportes'],
+                        'simbolo' => $simboloMoneda,
+                        'tono' => 'claro',
+                    ])
                 </div>
                 <div>
                     <dt>Aportes</dt>
@@ -109,7 +115,10 @@
                               aria-label="Progreso de {{ $fondo->nombre }}"><span
                                   class="don-progreso__relleno"
                                   data-fondo-progreso-relleno
-                                  style="width: {{ $metricas['porcentaje'] }}%"></span></span>
+                                  style="width: {{ $metricas['porcentaje'] }}%"></span>@if ($metricas['porcentaje_pendiente'] !== null)<span
+                                  class="don-progreso__pendiente"
+                                  style="width: {{ $metricas['porcentaje_pendiente'] }}%"
+                                  title="Por verificar"></span>@endif</span>
                         <span class="don-progreso__texto">
                             <span>{{ $simboloMoneda }} {{ number_format($metricas['recaudado'], 2) }}</span>
                             <span>de {{ $simboloMoneda }} {{ number_format((float) $metricas['meta'], 0) }}</span>

@@ -72,6 +72,10 @@ Route::middleware('auth:admin')->group(function (): void {
     Route::get('/verificacion/{donacion}/comprobante', [VerificacionController::class, 'comprobante'])->name('verificacion.comprobante');
     Route::post('/verificacion/{donacion}', [VerificacionController::class, 'verificar'])->name('verificacion.verificar');
 
+    // Deshacer una decision ya tomada. Solo superadmin, y solo sobre el canal
+    // manual: el de Mercado Pago lo manda la pasarela.
+    Route::post('/verificacion/{donacion}/revertir', [VerificacionController::class, 'revertir'])->name('verificacion.revertir');
+
     // Administradores. Solo superadmin (AdminUserPolicy).
     Route::get('/usuarios', [UsuarioAdminController::class, 'index'])->name('usuarios.index');
     Route::get('/usuarios/crear', [UsuarioAdminController::class, 'crear'])->name('usuarios.crear');

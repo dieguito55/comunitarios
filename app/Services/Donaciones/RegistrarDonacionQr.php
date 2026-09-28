@@ -42,6 +42,8 @@ use Throwable;
  */
 final class RegistrarDonacionQr
 {
+    public function __construct(private readonly CalcularPendientes $pendientes) {}
+
     /**
      * @param  array<string, mixed>  $datos  Salida de CrearDonacionQrRequest::datosDonacion()
      */
@@ -83,6 +85,10 @@ final class RegistrarDonacionQr
 
             throw $excepcion;
         }
+
+        // La cifra de «por verificar» acaba de cambiar: que se vea ya, no en
+        // medio minuto. Quien dona espera ver su aporte reflejado al instante.
+        $this->pendientes->olvidarCacheDeFondo($donacion->fondo_id);
 
         Log::channel('payments')->info('Donación por QR registrada, pendiente de verificación', [
             'donacion_id' => $donacion->id,

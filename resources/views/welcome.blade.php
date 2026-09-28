@@ -171,6 +171,15 @@
                             <strong data-fondo-recaudado>{{ $fondoDestacado->simboloMoneda() }} {{ number_format((float) $fondoDestacado->recaudado, 2) }}</strong>
                         </div>
 
+                        {{-- Aparte del recaudado y con menos peso visual: es
+                             dinero recibido que todavia nadie ha verificado. --}}
+                        @include('publico.componentes.pendiente', [
+                            'monto' => $pendienteDestacado['monto'],
+                            'aportes' => $pendienteDestacado['aportes'],
+                            'simbolo' => $fondoDestacado->simboloMoneda(),
+                            'tono' => 'claro',
+                        ])
+
                         {{-- Sin meta no hay barra. Un 0 % en la portada de una
                              fundacion se lee como un fracaso, no como una
                              campana que acaba de empezar. --}}

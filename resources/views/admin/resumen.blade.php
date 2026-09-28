@@ -73,6 +73,24 @@
                 <small>Fondos creados</small>
             </p>
         </div>
+
+        {{-- La cola de trabajo, no las cuentas. Este dinero NO está en
+             «recaudado» y no lo estará hasta que alguien mire el comprobante.
+             Sale aquí porque si no se ve al entrar, no se hace. --}}
+        @if ($pendientes['aportes'] > 0)
+            <div class="admin-tarjeta admin-tarjeta--atencion">
+                <p class="admin-cifra">
+                    {{ number_format($pendientes['monto'], 2) }}
+                    <small>
+                        Por verificar ·
+                        {{ $pendientes['aportes'] }} {{ $pendientes['aportes'] === 1 ? 'aporte' : 'aportes' }}
+                    </small>
+                </p>
+                <a class="boton boton--secundario" href="{{ route('admin.verificacion.index') }}">
+                    Revisar la cola
+                </a>
+            </div>
+        @endif
     </div>
 
     <h2>Por fondo</h2>
@@ -102,8 +120,17 @@
 
                     <p class="admin-cifra">
                         {{ number_format($m['recaudado'], 2) }}
-                        <small>{{ $m['moneda'] }} recaudados</small>
+                        <small>{{ $m['moneda'] }} recaudados y confirmados</small>
                     </p>
+
+                    @if ($m['pendientes_aportes'] > 0)
+                        <p class="admin-pendiente">
+                            <a href="{{ route('admin.verificacion.index', ['fondo' => $fondo->id, 'estado' => 'pendiente']) }}">
+                                + {{ $m['moneda'] }} {{ number_format($m['pendiente'], 2) }} por verificar
+                                ({{ $m['pendientes_aportes'] }} {{ $m['pendientes_aportes'] === 1 ? 'aporte' : 'aportes' }})
+                            </a>
+                        </p>
+                    @endif
 
                     <p>
                         {{ $m['donaciones'] }} {{ $m['donaciones'] === 1 ? 'donación' : 'donaciones' }}

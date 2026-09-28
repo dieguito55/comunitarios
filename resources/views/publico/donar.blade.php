@@ -68,7 +68,24 @@
               novalidate
               data-moneda="{{ $moneda }}"
               data-monto-minimo="{{ $montoMinimo }}"
-              data-monto-maximo="{{ $montoMaximo }}">
+              data-monto-maximo="{{ $montoMaximo }}"
+              data-comprobante-max-mb="{{ (int) config('donaciones.comprobante.max_mb', 10) }}">
+
+            {{--
+                RESUMEN DE ERRORES
+
+                Nace oculto y lo llena `donacion.js` al intentar enviar con
+                campos incompletos. `role="alert"` para que un lector de
+                pantalla lo anuncie sin ir a buscarlo, y enlaces de verdad a
+                cada campo para llegar con una pulsación.
+
+                Existe por un fallo real: alguien rellenó todo, olvidó marcar
+                «Acepto los términos», pulsó el botón y no pasó nada visible.
+            --}}
+            <div class="don-errores" data-resumen-errores role="alert" aria-live="assertive" hidden>
+                <h2><i data-lucide="alert-circle" aria-hidden="true"></i> Falta algo para poder continuar</h2>
+                <ul data-resumen-errores-lista></ul>
+            </div>
 
             <div class="don-layout">
 
@@ -83,6 +100,7 @@
 
                         <div class="don-aviso" data-donacion-aviso-fondo aria-live="polite"></div>
 
+                        <div data-campo="fondo_id">
                         <fieldset class="don-fondos">
                             <legend class="visually-hidden">Proyectos que están recibiendo donaciones</legend>
 
@@ -116,8 +134,14 @@
 
                                         <span class="don-fondo__cifra" data-fondo-recaudado>
                                             {{ $fondo->simboloMoneda() }} {{ number_format((float) $fondo->recaudado, 2) }}
-                                            <small><span data-fondo-donaciones>{{ $fondo->donaciones_count }}</span> aportes recibidos</small>
+                                            <small><span data-fondo-donaciones>{{ $fondo->donaciones_count }}</span> aportes confirmados</small>
                                         </span>
+
+                                        @include('publico.componentes.pendiente', [
+                                            'monto' => $pendientesPorFondo[$fondo->id]['monto'] ?? 0.0,
+                                            'aportes' => $pendientesPorFondo[$fondo->id]['aportes'] ?? 0,
+                                            'simbolo' => $fondo->simboloMoneda(),
+                                        ])
 
                                         @if ($fondo->porcentajeDeMeta() !== null)
                                             <span class="don-progreso"
@@ -139,6 +163,8 @@
                                 </label>
                             @endforeach
                         </fieldset>
+                        <strong class="don-campo__error" id="error-fondo_id" data-campo-error></strong>
+                        </div>
 
                         @if ($fondos->count() > 1)
                             <p class="don-paso__accion">
@@ -258,14 +284,17 @@
                             </label>
                         </div>
 
-                        <div class="don-casilla" data-campo="acepta_terminos">
+                        {{-- El error de esta casilla va PEGADO a ella. Es el campo
+                             que se olvida y el que, cuando fallaba en silencio,
+                             dejaba a la gente sin saber por qué no avanzaba. --}}
+                        <div class="don-casilla don-casilla--campo" data-campo="acepta_terminos">
                             <input type="checkbox" id="donacion-terminos" name="acepta_terminos" value="1" required
                                    aria-describedby="error-acepta_terminos">
                             <label for="donacion-terminos">
                                 Acepto los términos y la política de privacidad
                             </label>
+                            <strong class="don-campo__error" id="error-acepta_terminos" data-campo-error></strong>
                         </div>
-                        <strong class="don-campo__error" id="error-acepta_terminos" data-campo-error></strong>
 
                         {{-- ── Pago ────────────────────────────────────── --}}
                         {{--

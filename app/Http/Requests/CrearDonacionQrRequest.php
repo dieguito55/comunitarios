@@ -76,7 +76,7 @@ final class CrearDonacionQrRequest extends CrearDonacionRequest
             'proveedor_pago.required' => 'Indica si pagaste con Yape o con Plin.',
             'proveedor_pago.in' => 'Indica si pagaste con Yape o con Plin.',
 
-            'referencia_pago.string' => 'El número de operación no es válido.',
+            'referencia_pago.string' => 'El número de operación solo puede llevar números y letras.',
             'referencia_pago.max' => 'El número de operación no puede superar los 100 caracteres.',
 
             'comprobante.required' => 'Adjunta la captura o el PDF de tu transferencia.',

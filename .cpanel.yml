@@ -61,7 +61,9 @@ deployment:
     # ── El despliegue ────────────────────────────────────────────────────────
 
     # Nadie ve una pagina a medio migrar.
-    - $PHP $DP/artisan down --render="errors::503"
+    # errors.503 y no errors::503: la primera es la nuestra, con el diseno del
+    # sitio; la segunda es la pantalla gris que trae Laravel.
+    - $PHP $DP/artisan down --render="errors.503"
 
     # --force porque en produccion migrate pide confirmacion por teclado y
     # aqui no hay nadie para darsela.

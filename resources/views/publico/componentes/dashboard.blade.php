@@ -38,14 +38,19 @@
             <span aria-hidden="true"><i data-lucide="hand-coins"></i></span>
             <div>
                 <strong data-total-recaudado>{{ $simbolo }} {{ number_format($totales['recaudado'], 2) }}</strong>
-                <p>Recaudado</p>
+                <p>Recaudado y confirmado</p>
+                @include('publico.componentes.pendiente', [
+                    'monto' => $totales['pendiente'],
+                    'aportes' => $totales['pendientes_aportes'],
+                    'simbolo' => $simbolo,
+                ])
             </div>
         </article>
         <article class="don-total">
             <span aria-hidden="true"><i data-lucide="heart-handshake"></i></span>
             <div>
                 <strong data-total-donaciones>{{ $totales['donaciones'] }}</strong>
-                <p>Aportes recibidos</p>
+                <p>Aportes confirmados</p>
             </div>
         </article>
         <article class="don-total">

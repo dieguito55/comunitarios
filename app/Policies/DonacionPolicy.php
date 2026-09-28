@@ -55,11 +55,39 @@ final class DonacionPolicy
      *
      * Solo sobre donaciones del canal manual y solo mientras sigan pendientes:
      * una ya verificada no se re-verifica desde aquí. Cambiar una decisión ya
-     * tomada es otra operación, con otro rastro, y todavía no existe.
+     * tomada es otra operación con otro rastro: `revertir`, más abajo, que la
+     * devuelve a pendiente y deja constancia de quién la deshizo.
      */
     public function verificar(AdminUser $admin, Donacion $donacion): bool
     {
         return $donacion->canal_pago === CanalPago::QR_MANUAL
             && $donacion->estado === EstadoDonacion::PENDIENTE;
+    }
+
+    /**
+     * Deshacer una verificación ya tomada.
+     *
+     * ── SOLO SUPERADMIN, Y NO ES SIMETRÍA ROTA ──────────────────────────────
+     *
+     * Verificar lo puede hacer un editor porque es trabajo operativo con
+     * supervisión implícita: la decisión queda firmada y a la vista de todos.
+     * Deshacerla es otra cosa. Quien se equivoca aprobando podría borrar su
+     * propio error sin que nadie se enterara, y el control de que la decisión
+     * queda registrada dejaría de valer para nada.
+     *
+     * Por eso revertir sube un escalón: lo hace quien responde de las cuentas.
+     *
+     * ── EL CANAL DE MERCADO PAGO NO SE REVIERTE DESDE AQUÍ ──────────────────
+     *
+     * Su estado lo manda Mercado Pago. Una devolución o un contracargo llegan
+     * por webhook y el sistema ya baja los contadores solo. Tocarlo a mano
+     * dejaría la base de datos diciendo una cosa y la pasarela otra, y el
+     * siguiente aviso de MP sobrescribiría el cambio sin avisar.
+     */
+    public function revertir(AdminUser $admin, Donacion $donacion): bool
+    {
+        return $admin->esSuperadmin()
+            && $donacion->canal_pago === CanalPago::QR_MANUAL
+            && in_array($donacion->estado, [EstadoDonacion::APROBADO, EstadoDonacion::RECHAZADO], true);
     }
 }

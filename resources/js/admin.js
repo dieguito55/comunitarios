@@ -21,6 +21,7 @@ import {
     LayoutDashboard,
     ReceiptText,
     TriangleAlert,
+    Undo2,
     UsersRound,
 } from 'lucide';
 
@@ -30,7 +31,7 @@ import {
  * `import { icons }` arrastraria el catalogo entero —casi 400 kB— para pintar
  * cinco dibujos en un menu.
  */
-const ICONOS = { FolderHeart, LayoutDashboard, ReceiptText, TriangleAlert, UsersRound };
+const ICONOS = { FolderHeart, LayoutDashboard, ReceiptText, TriangleAlert, Undo2, UsersRound };
 
 function pintarIconos() {
     try {
@@ -44,9 +45,32 @@ function pintarIconos() {
 document.addEventListener('DOMContentLoaded', () => {
     pintarIconos();
     iniciarDialogosDeDecision();
+    iniciarDialogosSimples('[data-revertir-abrir]', 'revertirId', 'data-revertir', '[data-revertir-cerrar]');
     iniciarConfirmaciones();
     iniciarVisor();
 });
+
+/**
+ * Abrir y cerrar un <dialog> por pares boton/dialogo.
+ *
+ * Los de reversion no llevan la vigilancia del monto que si necesitan los de
+ * decision, asi que comparten solo esta parte.
+ */
+function iniciarDialogosSimples(selectorBoton, clave, atributo, selectorCerrar) {
+    document.querySelectorAll(selectorBoton).forEach((boton) => {
+        const dialogo = document.querySelector(`[${atributo}="${CSS.escape(boton.dataset[clave])}"]`);
+
+        if (!dialogo || typeof dialogo.showModal !== 'function') {
+            return;
+        }
+
+        boton.addEventListener('click', () => dialogo.showModal());
+
+        dialogo.querySelectorAll(selectorCerrar).forEach((cerrar) => {
+            cerrar.addEventListener('click', () => dialogo.close());
+        });
+    });
+}
 
 /* ── Confirmación de acciones destructivas ───────────────────────────────── */
 

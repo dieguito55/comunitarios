@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Publico;
 
 use App\Http\Controllers\Controller;
 use App\Models\Fondo;
+use App\Services\Donaciones\CalcularPendientes;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 use Throwable;
@@ -30,6 +31,11 @@ final class PortadaController extends Controller
 
         return view('welcome', [
             'fondoDestacado' => $destacado,
+
+            // Aparte del recaudado, siempre. Nunca sumado.
+            'pendienteDestacado' => $destacado !== null
+                ? app(CalcularPendientes::class)->porFondo($destacado)
+                : ['monto' => 0.0, 'aportes' => 0],
 
             /*
              * A dónde llevan los botones «Súmate».

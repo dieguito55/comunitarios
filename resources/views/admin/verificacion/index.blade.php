@@ -34,6 +34,14 @@
             </select>
         </div>
 
+        <div class="campo">
+            <label for="filtro-canal">Canal</label>
+            <select id="filtro-canal" name="canal">
+                <option value="qr_manual" @selected($canalActivo === \App\Enums\CanalPago::QR_MANUAL)>Yape / Plin</option>
+                <option value="mercadopago" @selected($canalActivo === \App\Enums\CanalPago::MERCADOPAGO)>Mercado Pago (solo consulta)</option>
+            </select>
+        </div>
+
         <button type="submit" class="boton boton--secundario">Filtrar</button>
     </form>
 
@@ -132,13 +140,40 @@
                                 @if ($donacion->motivo_rechazo)
                                     <small class="admin-tabla__apunte">{{ $donacion->motivo_rechazo }}</small>
                                 @endif
+                                @if ($donacion->revertido_at)
+                                    {{-- El rastro de la primera decisión NO se borra al
+                                         revertir: las dos líneas juntas cuentan la
+                                         historia entera. --}}
+                                    <small class="admin-tabla__apunte">
+                                        Revertida por {{ $donacion->revertidoPor?->username ?? 'alguien' }}
+                                        el {{ $donacion->revertido_at->timezone(config('donaciones.zona_horaria_display'))->format('d/m H:i') }}:
+                                        {{ $donacion->motivo_reversion }}
+                                    </small>
+                                @endif
                             </td>
                             <td>
-                                @can('verificar', $donacion)
+                                @if ($donacion->canal_pago === \App\Enums\CanalPago::MERCADOPAGO)
+                                    {{-- NO es una funcionalidad que falte: es una
+                                         decisión. El estado de un pago con tarjeta lo
+                                         manda Mercado Pago, y una devolución o un
+                                         contracargo llegan por webhook y bajan los
+                                         contadores solos. Tocarlo a mano dejaría la
+                                         base diciendo una cosa y la pasarela otra, y
+                                         el siguiente aviso lo sobrescribiría. --}}
+                                    <span class="admin-tabla__apunte">
+                                        Lo controla Mercado Pago. Una devolución se hace
+                                        desde su panel, no desde aquí.
+                                    </span>
+                                @elsecan('verificar', $donacion)
                                     <button type="button"
                                             class="boton"
                                             data-decidir-abrir
                                             data-decidir-id="{{ $donacion->id }}">Revisar</button>
+                                @elsecan('revertir', $donacion)
+                                    <button type="button"
+                                            class="boton boton--secundario"
+                                            data-revertir-abrir
+                                            data-revertir-id="{{ $donacion->id }}">Revertir</button>
                                 @else
                                     <span class="admin-tabla__apunte">revisada</span>
                                 @endcan
@@ -168,7 +203,10 @@
                 <form method="POST" action="{{ route('admin.verificacion.verificar', $donacion) }}">
                     @csrf
 
-                    <h2 id="titulo-decidir-{{ $donacion->id }}">Revisar el aporte de {{ $donacion->nombre }}</h2>
+                    <h2 id="titulo-decidir-{{ $donacion->id }}">
+                        <i data-lucide="receipt-text" aria-hidden="true"></i>
+                        Revisar el aporte de {{ $donacion->nombre }}
+                    </h2>
 
                     <p class="admin-dialogo__resumen">
                         Declaró <strong>{{ $donacion->moneda }} {{ number_format((float) $donacion->monto_referencial, 2) }}</strong>
@@ -177,6 +215,9 @@
                         @if ($donacion->referencia_pago)
                             Operación {{ $donacion->referencia_pago }}.
                         @endif
+                        <br>
+                        Aprobar suma ese importe al contador público del fondo. Se puede
+                        revertir después, pero queda registrado.
                     </p>
 
                     <div class="campo">
@@ -228,6 +269,71 @@
                             Rechazar
                         </button>
                         <button type="button" class="boton boton--secundario" data-decidir-cerrar>Cancelar</button>
+                    </div>
+                </form>
+            </dialog>
+        @endforeach
+
+        {{--
+            DIÁLOGOS DE REVERSIÓN
+
+            Solo para superadmin (DonacionPolicy). Muestran el IMPORTE EXACTO
+            que se va a restar del fondo y el nombre de quien donó: es la
+            información que hace falta para no deshacer la donación equivocada.
+        --}}
+        @foreach ($donaciones as $donacion)
+            @continue(! auth('admin')->user()?->can('revertir', $donacion))
+            @php($seRestan = $donacion->estado === \App\Enums\EstadoDonacion::APROBADO)
+
+            <dialog class="admin-dialogo" data-revertir="{{ $donacion->id }}"
+                    aria-labelledby="titulo-revertir-{{ $donacion->id }}">
+                <form method="POST" action="{{ route('admin.verificacion.revertir', $donacion) }}">
+                    @csrf
+
+                    <h2 id="titulo-revertir-{{ $donacion->id }}">
+                        <i data-lucide="undo-2" aria-hidden="true"></i>
+                        Revertir la verificación
+                    </h2>
+
+                    <p class="admin-dialogo__resumen">
+                        Aporte de <strong>{{ $donacion->nombre }}</strong>
+                        a {{ $donacion->fondo?->nombre ?? 'un fondo' }}.
+                        @if ($seRestan)
+                            Se van a <strong>restar {{ $donacion->moneda }}
+                            {{ number_format((float) $donacion->monto_real, 2) }}</strong>
+                            del recaudado del fondo, y la donación vuelve a la cola.
+                        @else
+                            Estaba rechazada, así que los contadores no se mueven.
+                            La donación vuelve a la cola.
+                        @endif
+                        <br>
+                        No se borra nada: queda registrado quién la revirtió y por qué.
+                    </p>
+
+                    <div class="campo">
+                        <label for="motivo-reversion-{{ $donacion->id }}">Motivo de la reversión</label>
+                        <span class="campo__ayuda">
+                            Mínimo 10 caracteres. Es lo único que explicará, dentro de seis
+                            meses, por qué esta donación dejó de estar verificada.
+                        </span>
+                        <input type="text"
+                               id="motivo-reversion-{{ $donacion->id }}"
+                               name="motivo_reversion"
+                               minlength="10"
+                               maxlength="300"
+                               required
+                               placeholder="Aprobada por error: el comprobante era de otra donación">
+                    </div>
+
+                    <div class="admin-dialogo__acciones">
+                        <button type="submit" class="boton boton--peligro">
+                            @if ($seRestan)
+                                Sí, restar {{ $donacion->moneda }} {{ number_format((float) $donacion->monto_real, 2) }}
+                            @else
+                                Sí, revertir
+                            @endif
+                        </button>
+                        <button type="button" class="boton boton--secundario" data-revertir-cerrar>Cancelar</button>
                     </div>
                 </form>
             </dialog>

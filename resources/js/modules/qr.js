@@ -1,4 +1,5 @@
 import { escaparHtml, formatearMonto } from './api.js';
+import { limpiarAlCorregir, señalarErrores } from './donacion.js';
 import { pintarIconos } from './iconos.js';
 
 /**
@@ -36,6 +37,7 @@ export function iniciarQr() {
     configurarCopiar(formulario);
     configurarVistaPrevia(formulario);
     configurarEnvio(formulario);
+    limpiarAlCorregir(formulario);
 }
 
 /* ── Selector de canal ───────────────────────────────────────────────────── */
@@ -208,6 +210,17 @@ function configurarEnvio(formulario) {
     boton.addEventListener('click', async () => {
         limpiarErrores(formulario);
 
+        // Se valida antes de subir el archivo: comprobar el tamaño después de
+        // haber mandado 10 MB por una conexión móvil es gastarle los datos a
+        // quien dona para decirle que no valían.
+        const errores = validarAntesDeSubir(formulario);
+
+        if (Object.keys(errores).length > 0) {
+            señalarErrores(formulario, errores);
+
+            return;
+        }
+
         const datos = new FormData(formulario);
 
         // El formulario comparte los campos del donante con el canal de
@@ -246,7 +259,9 @@ function configurarEnvio(formulario) {
         }
 
         if (estado === 422 && respuesta && respuesta.campos) {
-            marcarCampos(formulario, respuesta.campos);
+            señalarErrores(formulario, respuesta.campos);
+
+            return;
         }
 
         mostrar(
@@ -255,6 +270,47 @@ function configurarEnvio(formulario) {
             'error'
         );
     });
+}
+
+/**
+ * Lo que solo este canal puede comprobar: el archivo.
+ *
+ * Los campos del donante los valida `señalarErrores` con lo que devuelva el
+ * servidor; aquí se adelanta lo que se puede saber sin subir nada, que es
+ * justamente lo caro de averiguar tarde.
+ *
+ * @returns {Object<string,string>} campo → mensaje
+ */
+function validarAntesDeSubir(formulario) {
+    const errores = {};
+    const campo = formulario.querySelector('#qr-comprobante');
+    const archivo = campo && campo.files ? campo.files[0] : null;
+    const maximoMb = Number(formulario.dataset.comprobanteMaxMb) || 10;
+
+    if (!archivo) {
+        errores.comprobante = 'Adjunta la captura o el PDF de tu transferencia. Sin comprobante no podemos verificar el aporte.';
+
+        return errores;
+    }
+
+    if (archivo.size > maximoMb * 1024 * 1024) {
+        const pesa = (archivo.size / (1024 * 1024)).toFixed(1);
+
+        errores.comprobante = `El comprobante pesa ${pesa} MB y el máximo son ${maximoMb} MB. `
+            + 'Prueba con una captura en vez de la foto de la pantalla.';
+
+        return errores;
+    }
+
+    const admitidos = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+
+    // El tipo que declara el navegador no es de fiar —el servidor lo vuelve a
+    // leer del contenido— pero sirve para avisar antes de subir.
+    if (archivo.type && !admitidos.includes(archivo.type)) {
+        errores.comprobante = 'El comprobante tiene que ser una imagen (JPG, PNG o WEBP) o un PDF.';
+    }
+
+    return errores;
 }
 
 /**
@@ -296,24 +352,6 @@ function bloquear(boton, bloqueado) {
     }
 
     boton.innerHTML = '<span class="don-girador" aria-hidden="true"></span> Enviando tu comprobante…';
-}
-
-function marcarCampos(formulario, campos) {
-    Object.keys(campos).forEach((nombre) => {
-        const contenedor = formulario.querySelector(`[data-campo="${nombre}"]`);
-
-        if (!contenedor) {
-            return;
-        }
-
-        contenedor.classList.add('don-campo--error');
-
-        const hueco = contenedor.querySelector('[data-campo-error]');
-
-        if (hueco) {
-            hueco.textContent = campos[nombre];
-        }
-    });
 }
 
 function limpiarErrores(formulario) {

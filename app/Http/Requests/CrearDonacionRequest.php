@@ -125,20 +125,20 @@ class CrearDonacionRequest extends FormRequest
     {
         return [
             'nombre.required' => 'Necesitamos tu nombre para registrar el aporte.',
-            'nombre.string' => 'El nombre no es válido.',
+            'nombre.string' => 'Escribe tu nombre con letras.',
             'nombre.min' => 'El nombre debe tener entre 3 y 200 caracteres.',
             'nombre.max' => 'El nombre debe tener entre 3 y 200 caracteres.',
 
             'documento.required' => 'Necesitamos tu documento de identidad.',
-            'documento.string' => 'El documento no es válido.',
-            'documento.regex' => 'Documento inválido. Usa entre 5 y 20 caracteres alfanuméricos.',
+            'documento.string' => 'Escribe tu documento con letras y números, sin espacios.',
+            'documento.regex' => 'El documento solo puede llevar letras, números y guiones, entre 5 y 20 caracteres. Un DNI son 8 dígitos; un RUC, 11.',
 
             'correo.required' => 'Necesitamos un correo para enviarte la constancia.',
-            'correo.string' => 'Correo electrónico inválido.',
-            'correo.email' => 'Correo electrónico inválido.',
+            'correo.string' => 'El correo no parece válido. Revisa que tenga @ y un dominio, como nombre@correo.com.',
+            'correo.email' => 'El correo no parece válido. Revisa que tenga @ y un dominio, como nombre@correo.com.',
             'correo.max' => 'El correo no puede superar los 200 caracteres.',
 
-            'telefono.string' => 'El teléfono no es válido.',
+            'telefono.string' => 'Escribe el teléfono solo con números, espacios y el signo +.',
             'telefono.max' => 'El teléfono no puede superar los 30 caracteres.',
 
             'tipo_aportante.required' => 'Indica si donas como persona o como empresa.',
@@ -150,17 +150,21 @@ class CrearDonacionRequest extends FormRequest
             'fondo_id.exists' => 'Ese fondo no está recibiendo donaciones en este momento.',
 
             'monto.required' => 'Debes ingresar un monto para donar.',
-            'monto.numeric' => 'El monto debe ser un número.',
-            'monto.min' => 'El monto mínimo es :min.',
-            'monto.max' => 'El monto máximo por donación es :max.',
+            'monto.numeric' => 'Escribe el monto solo con números, por ejemplo 50 o 50.00.',
+            'monto.min' => 'El monto mínimo es :min y el máximo '.number_format((float) config('donaciones.monto_maximo'), 0).'.',
+            'monto.max' => 'El monto máximo por donación es '.number_format((float) config('donaciones.monto_maximo'), 0).'. Si quieres aportar más, escríbenos.',
 
-            'moneda.required' => 'Moneda no soportada.',
-            'moneda.string' => 'Moneda no soportada.',
-            'moneda.in' => 'Moneda no soportada.',
+            // Estas tres no las puede provocar el donante: la moneda la fija
+            // la configuración y el formulario la envía sola. Si aparecen, es
+            // que algo va mal de nuestro lado, y el mensaje lo dice sin
+            // culpar a quien está intentando donar.
+            'moneda.required' => 'Hubo un problema con la configuración de la donación. Recarga la página e inténtalo otra vez.',
+            'moneda.string' => 'Hubo un problema con la configuración de la donación. Recarga la página e inténtalo otra vez.',
+            'moneda.in' => 'Hubo un problema con la configuración de la donación. Recarga la página e inténtalo otra vez.',
 
-            'visible_publico.boolean' => 'La preferencia de anonimato no es válida.',
+            'visible_publico.boolean' => 'No pudimos leer tu preferencia de anonimato. Marca o desmarca la casilla otra vez.',
 
-            'acepta_terminos.accepted' => 'Debes aceptar los términos y la política de privacidad.',
+            'acepta_terminos.accepted' => 'Necesitas aceptar los términos y la política de privacidad para continuar.',
         ];
     }
 

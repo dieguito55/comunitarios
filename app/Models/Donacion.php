@@ -62,6 +62,9 @@ class Donacion extends Model
         'verificado_por',
         'verificado_at',
         'motivo_rechazo',
+        'revertido_por',
+        'revertido_at',
+        'motivo_reversion',
         'ip_origen',
     ];
 
@@ -96,6 +99,7 @@ class Donacion extends Model
             'acepta_terminos' => 'boolean',
             'es_lote_anonimo' => 'boolean',
             'verificado_at' => 'datetime',
+            'revertido_at' => 'datetime',
         ];
     }
 
@@ -162,5 +166,16 @@ class Donacion extends Model
     public function verificadoPor(): BelongsTo
     {
         return $this->belongsTo(AdminUser::class, 'verificado_por');
+    }
+
+    /**
+     * Quién deshizo la verificación, si alguien la deshizo.
+     *
+     * Convive con `verificadoPor`: las dos juntas cuentan la historia entera
+     * de una donación que se decidió mal y se corrigió.
+     */
+    public function revertidoPor(): BelongsTo
+    {
+        return $this->belongsTo(AdminUser::class, 'revertido_por');
     }
 }

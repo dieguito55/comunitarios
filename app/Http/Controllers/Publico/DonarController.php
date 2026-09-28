@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Publico;
 
 use App\Http\Controllers\Controller;
 use App\Models\Fondo;
+use App\Services\Donaciones\CalcularPendientes;
 use Illuminate\View\View;
 
 /**
@@ -27,6 +28,13 @@ final class DonarController extends Controller
             ? $fondo
             : ($abiertos->count() === 1 ? $abiertos->first() : null);
 
+        /*
+         * Lo pendiente de TODOS los fondos en una sola consulta cacheada, no
+         * una por tarjeta: con quince fondos serían quince viajes a la base
+         * para pintar una línea de texto.
+         */
+        $pendientes = app(CalcularPendientes::class)->totales()['por_fondo'];
+
         return view('publico.donar', [
             'fondos' => $abiertos,
             'preseleccionado' => $preseleccionado,
@@ -37,6 +45,7 @@ final class DonarController extends Controller
             'montosSugeridos' => (array) config('donaciones.montos_sugeridos', []),
             'montoMinimo' => (float) config('donaciones.monto_minimo_mp'),
             'montoMaximo' => (float) config('donaciones.monto_maximo'),
+            'pendientesPorFondo' => $pendientes,
             'moneda' => $moneda = (string) config('mercadopago.currency', 'PEN'),
 
             // El simbolo, no el codigo ISO: en la pantalla se lee «S/ 50», no
