@@ -1066,3 +1066,63 @@ body.admin {
     .admin-visor { width: 100%; max-width: none; margin: auto auto 0; border-radius: var(--radio-lg) var(--radio-lg) 0 0; }
     .admin-visor__lienzo { max-height: 60vh; }
 }
+
+/* =============================================================================
+   ANATOMÍA ÚNICA DE DIÁLOGO
+   =============================================================================
+   Los cuatro —verificar, deshacer, confirmar y el visor— comparten estructura:
+   cabecera que dice qué va a pasar y sobre qué, cuerpo con lo necesario para
+   decidir, y pie con la acción principal. El visor conserva su comportamiento
+   propio (ampliar, arrastrar) pero la misma barra y el mismo cierre.
+
+   `<dialog>` nativo trae de serie lo que importa y que nadie programa bien a
+   mano: Escape cierra, el foco queda atrapado dentro, el fondo queda inerte, y
+   al cerrar el foco vuelve al elemento que lo abrió.
+   ========================================================================== */
+
+.admin-dialogo,
+.admin-visor {
+    animation: admin-dialogo-entra var(--transicion-media) var(--curva) both;
+}
+
+@keyframes admin-dialogo-entra {
+    from { opacity: 0; transform: translateY(10px) scale(0.98); }
+    to { opacity: 1; transform: none; }
+}
+
+.admin-dialogo::backdrop,
+.admin-visor::backdrop {
+    animation: admin-fondo-entra var(--transicion-media) var(--curva) both;
+}
+
+@keyframes admin-fondo-entra {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Cabecera: siempre icono + qué va a pasar, sobre qué elemento concreto. */
+.admin-dialogo h2,
+.admin-visor__barra h2 {
+    display: flex;
+    align-items: center;
+    gap: var(--espacio-2);
+}
+
+.admin-dialogo h2 svg { width: 22px; flex: none; color: var(--blue); }
+
+/* Cuando la acción mueve dinero o es irreversible, el importe y el efecto van
+   en una línea destacada dentro del resumen. */
+.admin-dialogo__resumen strong { color: var(--ink); font-weight: 800; }
+
+/* Pie: la principal a la derecha, cancelar a la izquierda. En el DOM van en el
+   orden de lectura —primero la acción, luego cancelar— y aquí se recolocan,
+   que es lo que espera quien usa el sistema. */
+.admin-dialogo__acciones { justify-content: flex-end; }
+.admin-dialogo__acciones .boton--secundario { margin-right: auto; }
+
+@media (prefers-reduced-motion: reduce) {
+    .admin-dialogo,
+    .admin-visor,
+    .admin-dialogo::backdrop,
+    .admin-visor::backdrop { animation: none; }
+}

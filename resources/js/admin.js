@@ -46,9 +46,141 @@ document.addEventListener('DOMContentLoaded', () => {
     pintarIconos();
     iniciarDialogosDeDecision();
     iniciarDialogosSimples('[data-revertir-abrir]', 'revertirId', 'data-revertir', '[data-revertir-cerrar]');
+    iniciarValidacionDeDialogos();
     iniciarConfirmaciones();
     iniciarVisor();
+
+    // Lo ultimo: si el servidor rechazo un envio, se vuelve a abrir SU dialogo
+    // con lo que la persona habia escrito.
+    reabrirLosQueFallaron();
 });
+
+/* ── Los errores van DENTRO del dialogo ──────────────────────────────────── */
+
+/**
+ * Validacion en el navegador antes de enviar.
+ *
+ * ── EL FALLO QUE ARREGLA ────────────────────────────────────────────────────
+ *
+ * Una administradora abrio el dialogo de verificacion, pulso «Rechazar» sin
+ * escribir el motivo, el dialogo se cerro, la pagina recargo, y el mensaje
+ * aparecio ARRIBA DEL TODO, fuera de su vista. Penso que el sistema estaba roto
+ * y lo intento varias veces.
+ *
+ * Es el mismo fallo que ya se corrigio en el formulario publico. Aqui: si falta
+ * algo, no se envia nada, el campo se marca en rojo DENTRO del dialogo con su
+ * mensaje, y el foco salta ahi.
+ *
+ * Los campos declaran su exigencia en el marcado (`data-obligatorio`,
+ * `data-minimo`, `data-obligatorio-si`) para no tener aqui una lista de
+ * nombres de campo que se desincronice con las vistas.
+ */
+function iniciarValidacionDeDialogos() {
+    document.querySelectorAll('.admin-dialogo form').forEach((formulario) => {
+        formulario.addEventListener('submit', (evento) => {
+            // Que boton se pulso: en el dialogo de verificacion hay dos, y el
+            // motivo solo es obligatorio al rechazar.
+            const decision = evento.submitter ? String(evento.submitter.value || '') : '';
+            const fallo = primerCampoInvalido(formulario, decision);
+
+            if (!fallo) {
+                return;
+            }
+
+            evento.preventDefault();
+            marcarCampo(fallo.campo, fallo.mensaje);
+            fallo.campo.focus();
+        });
+
+        // El error desaparece al corregir, sin esperar a reenviar.
+        formulario.addEventListener('input', (evento) => limpiarCampo(evento.target));
+    });
+}
+
+/** @returns {{campo: Element, mensaje: string}|null} */
+function primerCampoInvalido(formulario, decision) {
+    const campos = formulario.querySelectorAll('[data-obligatorio]');
+
+    for (const campo of campos) {
+        const soloSi = campo.dataset.obligatorioSi;
+
+        // `data-obligatorio-si="rechazar"`: solo se exige con ese boton.
+        if (soloSi && soloSi !== decision) {
+            continue;
+        }
+
+        const valor = String(campo.value || '').trim();
+
+        if (valor === '') {
+            return { campo, mensaje: campo.dataset.obligatorio };
+        }
+
+        const minimo = Number(campo.dataset.minimo || 0);
+
+        if (minimo > 0 && valor.length < minimo) {
+            return { campo, mensaje: campo.dataset.minimoMensaje || `Escribe al menos ${minimo} caracteres.` };
+        }
+    }
+
+    return null;
+}
+
+function marcarCampo(campo, mensaje) {
+    const contenedor = campo.closest('.campo');
+
+    if (!contenedor) {
+        return;
+    }
+
+    contenedor.classList.add('campo--error');
+    campo.setAttribute('aria-invalid', 'true');
+
+    const hueco = contenedor.querySelector('[data-campo-error]');
+
+    if (hueco) {
+        hueco.textContent = mensaje;
+    }
+}
+
+function limpiarCampo(campo) {
+    const contenedor = campo.closest ? campo.closest('.campo') : null;
+
+    if (!contenedor || !contenedor.classList.contains('campo--error')) {
+        return;
+    }
+
+    contenedor.classList.remove('campo--error');
+    campo.removeAttribute('aria-invalid');
+
+    const hueco = contenedor.querySelector('[data-campo-error]');
+
+    if (hueco) {
+        hueco.textContent = '';
+    }
+}
+
+/**
+ * Vuelve a abrir el dialogo cuyo envio rechazo el servidor.
+ *
+ * La vista ya lo marco con `data-abrir-al-cargar` y le repuso los valores con
+ * `old()`, asi que no se pierde nada de lo escrito. Aqui solo se abre y se
+ * lleva el foco al primer campo que falla.
+ */
+function reabrirLosQueFallaron() {
+    const dialogo = document.querySelector('dialog[data-abrir-al-cargar]');
+
+    if (!dialogo || typeof dialogo.showModal !== 'function') {
+        return;
+    }
+
+    dialogo.showModal();
+
+    const primero = dialogo.querySelector('[aria-invalid="true"]');
+
+    if (primero) {
+        primero.focus();
+    }
+}
 
 /**
  * Abrir y cerrar un <dialog> por pares boton/dialogo.

@@ -32,6 +32,26 @@ final class VerificarDonacionRequest extends FormRequest
         return true;
     }
 
+    /**
+     * Cada diálogo tiene su propia bolsa de errores.
+     *
+     * ── POR QUÉ, Y QUÉ FALLO ARREGLA ────────────────────────────────────────
+     *
+     * Una administradora abrió el diálogo, pulsó «Rechazar» sin escribir el
+     * motivo, el diálogo se cerró, la página recargó y el mensaje apareció
+     * ARRIBA DEL TODO, fuera de su vista. Pensó que el sistema estaba roto y lo
+     * intentó varias veces.
+     *
+     * Con la bolsa nombrada por donación, la vista sabe A QUÉ diálogo pertenece
+     * cada error: puede volver a abrir ese y solo ese, y pintar el mensaje
+     * junto al campo que falla. Con una bolsa común no habría forma de saberlo
+     * en una pantalla con veinte filas.
+     */
+    protected function prepareForValidation(): void
+    {
+        $this->errorBag = 'verificacion_'.$this->route('donacion')?->getKey();
+    }
+
     /** @return array<string, mixed> */
     public function rules(): array
     {

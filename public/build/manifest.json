@@ -75,12 +75,12 @@
     "file": "assets/undo-2-BMLCuGet.js",
     "name": "undo-2"
   },
-  "_upload-wn8qbx04.js": {
-    "file": "assets/upload-wn8qbx04.js",
+  "_upload-DdLL1epD.js": {
+    "file": "assets/upload-DdLL1epD.js",
     "name": "upload"
   },
   "resources/css/admin.css": {
-    "file": "assets/admin-7vm7lXE2.css",
+    "file": "assets/admin-gXyStfGm.css",
     "name": "admin",
     "names": [
       "admin.css"
@@ -89,7 +89,7 @@
     "isEntry": true
   },
   "resources/css/app.css": {
-    "file": "assets/app-v9GDCLzt.css",
+    "file": "assets/app-BP1MiAAJ.css",
     "name": "app",
     "names": [
       "app.css"
@@ -98,7 +98,7 @@
     "isEntry": true
   },
   "resources/js/admin.js": {
-    "file": "assets/admin-jHutO98f.js",
+    "file": "assets/admin-CntUskba.js",
     "name": "admin",
     "src": "resources/js/admin.js",
     "isEntry": true,
@@ -108,24 +108,24 @@
     ]
   },
   "resources/js/app.js": {
-    "file": "assets/app-kmEnMG7B.js",
+    "file": "assets/app-Cvy0zTIz.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
     "imports": [
       "_lucide-BqsrL2bO.js",
-      "_upload-wn8qbx04.js",
+      "_upload-DdLL1epD.js",
       "_undo-2-BMLCuGet.js"
     ]
   },
   "resources/js/publico.js": {
-    "file": "assets/publico-Ooh70NNF.js",
+    "file": "assets/publico-DJuK9FvD.js",
     "name": "publico",
     "src": "resources/js/publico.js",
     "isEntry": true,
     "imports": [
       "_lucide-BqsrL2bO.js",
-      "_upload-wn8qbx04.js"
+      "_upload-DdLL1epD.js"
     ]
   }
 }

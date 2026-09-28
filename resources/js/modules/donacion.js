@@ -58,21 +58,40 @@ export function iniciarDonacion() {
         const { ok, estado, datos: respuesta } = await enviarJson(RUTA_CREAR, datos);
 
         if (ok && respuesta && respuesta.success === true && respuesta.init_point) {
+            const elegido = formulario.querySelector('input[name="fondo_id"]:checked');
+            const tarjeta = elegido ? elegido.closest('[data-fondo-nombre]') : null;
+
             // Las dos llaves de la red 2, guardadas ANTES de irnos. Al volver,
             // puede que Mercado Pago no traiga nada en la URL y esto sea lo
             // único que permita saber qué donación era.
+            //
+            // Se guardan también el monto, el fondo y la moneda porque la
+            // pantalla de resultado los necesita para decir «tu aporte de S/ X
+            // a Fondo Y», y el endpoint de reconciliación NO los devuelve: es
+            // público y sin sesión, y devolverlos permitiría enumerar
+            // donaciones ajenas probando identificadores. Aquí son datos de
+            // quien está mirando, sobre su propia donación.
             almacen.guardar({
                 donacion_id: Number(respuesta.donacion_id) || 0,
                 preference_id: String(respuesta.preference_id || ''),
                 monto: Number(datos.monto) || 0,
+                moneda: String(datos.moneda || 'PEN'),
+                fondo: tarjeta ? tarjeta.dataset.fondoNombre : '',
+                fondo_slug: tarjeta ? tarjeta.dataset.fondoSlug : '',
                 guardado_en: Date.now(),
             });
+
+            // La capa de tránsito se queda hasta que el navegador cambie de
+            // página: saltar a otro dominio sin aviso es donde más gente
+            // abandona, porque parece que algo se rompió.
+            mostrarTransito(Number(datos.monto) || 0, datos.moneda || 'PEN', respuesta.init_point);
 
             window.location.href = respuesta.init_point;
 
             return;
         }
 
+        ocultarTransito();
         bloquear(botones, false);
 
         // Los errores del servidor se pintan igual que los del navegador: el
@@ -89,6 +108,57 @@ export function iniciarDonacion() {
             'error'
         );
     });
+}
+
+/* ── Capa de tránsito ─────────────────────────────────────────────────────── */
+
+/**
+ * Enseña a dónde va y que va a volver.
+ *
+ * No tiene botón de cerrar: la donación ya está registrada y el navegador va a
+ * saltar. Ofrecer «cancelar» sugeriría que se puede parar, y no se puede.
+ *
+ * A los 8 segundos aparece el enlace directo: si el salto no ocurrió —un
+ * bloqueador, una conexión que se cayó justo ahí— dejar a alguien mirando una
+ * barra que no avanza es peor que darle el enlace y decírselo.
+ */
+function mostrarTransito(monto, moneda, destino) {
+    const capa = document.querySelector('[data-transito]');
+
+    if (!capa) {
+        return;
+    }
+
+    const hueco = capa.querySelector('[data-transito-monto]');
+
+    if (hueco) {
+        hueco.textContent = formatearMonto(monto, moneda);
+    }
+
+    capa.hidden = false;
+
+    window.setTimeout(() => {
+        const demora = capa.querySelector('[data-transito-demora]');
+        const enlace = capa.querySelector('[data-transito-enlace]');
+
+        if (!demora || capa.hidden) {
+            return;
+        }
+
+        if (enlace) {
+            enlace.href = destino;
+        }
+
+        demora.hidden = false;
+    }, 8000);
+}
+
+function ocultarTransito() {
+    const capa = document.querySelector('[data-transito]');
+
+    if (capa) {
+        capa.hidden = true;
+    }
 }
 
 /**

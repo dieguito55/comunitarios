@@ -228,12 +228,140 @@ final class ReversionYPendientesTest extends TestCase
         foreach (['', 'error', 'corto'] as $motivo) {
             $this->actingAs($admin, 'admin')
                 ->post(route('admin.verificacion.revertir', $donacion->fresh()), ['motivo_reversion' => $motivo])
-                ->assertSessionHasErrors('motivo_reversion');
+
+                // El error va a la bolsa de ESTE diálogo, no a la común: es lo
+                // que permite a la vista volver a abrir ese y solo ese, con el
+                // mensaje junto al campo en vez de perdido arriba del todo.
+                ->assertSessionHasErrors('motivo_reversion', null, 'reversion_'.$donacion->id);
         }
 
         // Nada se movió en ninguno de los tres intentos.
         $this->assertSame(EstadoDonacion::APROBADO, $donacion->refresh()->estado);
         $this->assertSame(100.0, (float) $fondo->refresh()->recaudado);
+    }
+
+    /**
+     * El «+» del final.
+     *
+     * Se reportó un motivo guardado como «aprobada por error+». Ese `+` es la
+     * forma en que `application/x-www-form-urlencoded` codifica un espacio: si
+     * un valor llega sin decodificar, un espacio final se convierte en un `+`
+     * visible, y `trim()` no lo quita porque un `+` no es espacio en blanco.
+     */
+    public function test_el_motivo_de_la_reversion_llega_limpio(): void
+    {
+        $this->fondoDePrueba();
+        $donacion = $this->porQr(100);
+        $admin = $this->admin();
+
+        $this->app->make(VerificarDonacionQr::class)->aprobar($donacion, $admin, 100.0);
+
+        $this->actingAs($admin, 'admin')->post(
+            route('admin.verificacion.revertir', $donacion->fresh()),
+            ['motivo_reversion' => '  aprobada   por  error+  ']
+        )->assertRedirect();
+
+        // Sin el «+», sin espacios de sobra y sin rachas internas.
+        $this->assertSame('aprobada por error', $donacion->refresh()->motivo_reversion);
+    }
+
+    /**
+     * El fallo reportado: el diálogo se cerraba y el error quedaba arriba.
+     *
+     * Una administradora pulsó «Rechazar» sin motivo, el diálogo se cerró, la
+     * página recargó y el mensaje apareció fuera de su vista. Pensó que el
+     * sistema estaba roto.
+     *
+     * Ahora el error va a la bolsa de ESE diálogo, la vista lo vuelve a abrir
+     * y repone lo que se había escrito.
+     */
+    public function test_si_el_servidor_rechaza_el_dialogo_se_reabre_con_lo_escrito(): void
+    {
+        $this->fondoDePrueba();
+        $donacion = $this->porQr(100);
+        $admin = $this->admin();
+
+        $this->app->make(VerificarDonacionQr::class)->aprobar($donacion, $admin, 100.0);
+
+        // Motivo demasiado corto: el servidor lo rechaza.
+        $this->actingAs($admin, 'admin')
+            ->post(route('admin.verificacion.revertir', $donacion->fresh()), ['motivo_reversion' => 'corto'])
+            ->assertRedirect();
+
+        $html = (string) $this->actingAs($admin, 'admin')
+            ->get(route('admin.verificacion.index', ['estado' => 'todos']))
+            ->assertOk()
+            ->getContent();
+
+        // El diálogo se vuelve a abrir solo.
+        $this->assertStringContainsString('data-abrir-al-cargar', $html);
+
+        // Con lo que había escrito, no en blanco.
+        $this->assertStringContainsString('value="corto"', $html);
+
+        // Y el mensaje, junto al campo, dentro del diálogo.
+        $this->assertStringContainsString('campo--error', $html);
+        $this->assertStringContainsString('mínimo 10 caracteres', $html);
+    }
+
+    /** Lo mismo en el diálogo de verificación, que es donde se reportó. */
+    public function test_rechazar_sin_motivo_reabre_el_dialogo_de_verificacion(): void
+    {
+        $this->fondoDePrueba();
+        $donacion = $this->porQr(100);
+        $admin = $this->admin();
+
+        $html = (string) $this->actingAs($admin, 'admin')
+            ->from(route('admin.verificacion.index'))
+            ->followingRedirects()
+            ->post(route('admin.verificacion.verificar', $donacion), [
+                'decision' => 'rechazar',
+                'motivo' => '',
+            ])
+            ->assertOk()
+            ->getContent();
+
+        $this->assertStringContainsString('data-abrir-al-cargar', $html);
+        $this->assertStringContainsString('Escribe por qué se rechaza', $html);
+
+        // Y no se decidió nada.
+        $this->assertSame(EstadoDonacion::PENDIENTE, $donacion->refresh()->estado);
+    }
+
+    /** «Deshacer» y no «revertir»: lo segundo se confunde con «rechazar». */
+    public function test_la_cola_llama_deshacer_a_la_accion_de_revertir(): void
+    {
+        $this->fondoDePrueba();
+        $donacion = $this->porQr(100);
+        $admin = $this->admin();
+
+        $this->app->make(VerificarDonacionQr::class)->aprobar($donacion, $admin, 100.0);
+
+        $html = (string) $this->actingAs($admin, 'admin')
+            ->get(route('admin.verificacion.index', ['estado' => 'todos']))
+            ->assertOk()
+            ->getContent();
+
+        $this->assertStringContainsString('Deshacer verificación', $html);
+
+        // Y el diálogo aclara que no descarta la donación.
+        $this->assertStringContainsString('No descarta la donación', $html);
+    }
+
+    /** Tras deshacer, el mensaje dice qué sigue. */
+    public function test_tras_deshacer_el_mensaje_dice_que_hay_que_volver_a_decidir(): void
+    {
+        $this->fondoDePrueba();
+        $donacion = $this->porQr(100);
+        $admin = $this->admin();
+
+        $this->app->make(VerificarDonacionQr::class)->aprobar($donacion, $admin, 100.0);
+
+        $this->actingAs($admin, 'admin')
+            ->post(route('admin.verificacion.revertir', $donacion->fresh()), [
+                'motivo_reversion' => 'Aprobada con el comprobante equivocado.',
+            ])
+            ->assertSessionHas('exito', fn (string $mensaje): bool => str_contains($mensaje, 'Vuelve a decidir'));
     }
 
     // ── 2. Pendientes ────────────────────────────────────────────────────────

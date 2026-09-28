@@ -93,6 +93,10 @@
             @endswitch
         </p>
 
+        {{-- La segunda linea: el matiz que responde a «¿y ahora que?». La
+             rellena `resultado.js` segun el desenlace real. --}}
+        <p class="don-resultado__detalle" data-resultado-detalle hidden></p>
+
         {{--
             ESTADO DE CARGA HONESTO.
 
@@ -106,18 +110,17 @@
             <span class="don-esqueleto"></span>
         </div>
 
-        {{-- Solo aparece cuando la operación falló o no se pudo identificar. --}}
-        <div class="don-resultado__acciones"
-             data-resultado-acciones
-             @if ($estadoProvisional !== 'rechazado' && $estadoProvisional !== 'desconocido') hidden @endif>
-            <a class="button button-coral" href="{{ route('donar') }}">
-                Intentar de nuevo <i data-lucide="rotate-ccw"></i>
-            </a>
-        </div>
+        {{--
+            LAS SALIDAS
 
-        {{-- Estas dos salidas están siempre: pase lo que pase, nadie se queda
-             sin saber a dónde ir. --}}
-        <div class="don-resultado__acciones">
+            Las pinta `resultado.js` segun el estado REAL, que el servidor no
+            conoce al renderizar: aqui solo tiene el `?donacion=` de la URL, que
+            no decide nada.
+
+            Sin JavaScript se quedan estas dos, que valen para cualquier caso:
+            nadie puede acabar en esta pantalla sin saber a donde ir.
+        --}}
+        <div class="don-resultado__acciones" data-resultado-acciones>
             <a class="button button-ghost" href="{{ route('donar') }}">
                 Ver los proyectos
             </a>

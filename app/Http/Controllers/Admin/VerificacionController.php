@@ -158,15 +158,23 @@ final class VerificacionController extends Controller
                 : 'No encontramos esa donación.');
         }
 
-        // El importe restado solo tiene sentido contarlo si había algo sumado.
+        /*
+         * El mensaje dice QUÉ SIGUE, no solo qué pasó.
+         *
+         * Deshacer devuelve la donación a `pendiente`, a la espera de una
+         * decisión nueva. Sin decirlo, quien lo hace se queda pensando que la
+         * donación quedó descartada —que es justo lo que «revertir» sugiere— y
+         * no vuelve a mirarla. El aporte se quedaría en la cola para siempre.
+         */
         if ($estadoPrevio === EstadoDonacion::APROBADO) {
             return back()->with('exito', sprintf(
-                'Verificación revertida. Se restaron %s del fondo y la donación vuelve a la cola.',
+                'Deshecha. Se restaron %s del fondo y volvió a pendiente. Vuelve a decidir: aprobar o rechazar.',
                 number_format(abs($resultado->movimiento), 2),
             ));
         }
 
-        return back()->with('exito', 'Verificación revertida. La donación vuelve a la cola; los contadores no se movieron.');
+        return back()->with('exito', 'Deshecha. Volvió a pendiente y los contadores no se movieron. '
+            .'Vuelve a decidir: aprobar o rechazar.');
     }
 
     /** Cuántas esperan. Lo usa también el resumen del panel. */

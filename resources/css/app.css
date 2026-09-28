@@ -2253,3 +2253,156 @@ fieldset.don-campo { margin: 0 0 var(--espacio-5); padding: 0; border: 0; }
     border-color: var(--coral);
     background: var(--coral-tenue);
 }
+
+/* =============================================================================
+   CAPA DE TRÁNSITO HACIA MERCADO PAGO
+   =============================================================================
+   Aparece cuando el servidor devuelve el init_point y se queda hasta que el
+   navegador cambia de dominio. No tiene botón de cerrar a propósito: no hay
+   nada que decidir, y ofrecer «cancelar» sugeriría que se puede parar.
+   ========================================================================== */
+
+.don-transito {
+    position: fixed;
+    z-index: 200;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: var(--espacio-5);
+    background: var(--superficie-oscura);
+    color: var(--white);
+    animation: don-transito-entra var(--transicion-media) var(--curva) both;
+}
+
+.don-transito[hidden] { display: none; }
+
+@keyframes don-transito-entra {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.don-transito__caja {
+    width: min(460px, 100%);
+    text-align: center;
+}
+
+.don-transito__logo {
+    display: block;
+    width: 56px;
+    height: 56px;
+    margin: 0 auto var(--espacio-6);
+    border-radius: var(--radio-md);
+    object-fit: cover;
+}
+
+/* Barra indeterminada: no sabemos cuánto falta, y fingir un porcentaje sería
+   inventárselo. `linear` es la única excepción a --curva que admite el
+   proyecto, justo para esto. */
+.don-transito__barra {
+    height: 4px;
+    margin-bottom: var(--espacio-6);
+    overflow: hidden;
+    border-radius: var(--radio-full);
+    background: var(--linea-oscura);
+}
+
+.don-transito__barra span {
+    display: block;
+    width: 40%;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--yellow), var(--coral));
+    animation: don-transito-avanza 1.3s linear infinite;
+}
+
+@keyframes don-transito-avanza {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(250%); }
+}
+
+.don-transito__titular {
+    margin: 0 0 var(--espacio-6);
+    font-size: var(--texto-xl);
+    font-weight: 700;
+    line-height: var(--alto-medio);
+}
+
+.don-transito__titular strong {
+    display: block;
+    margin-top: var(--espacio-2);
+    color: var(--yellow);
+    font-size: var(--texto-2xl);
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: var(--traqueo-titulo);
+}
+
+.don-transito__notas {
+    display: grid;
+    gap: var(--espacio-3);
+    margin: 0;
+    padding: 0;
+    text-align: left;
+    list-style: none;
+}
+
+.don-transito__notas li {
+    display: grid;
+    align-items: start;
+    gap: var(--espacio-3);
+    grid-template-columns: 20px minmax(0, 1fr);
+    color: var(--sobre-oscuro);
+    font-size: var(--texto-sm);
+    line-height: var(--alto-medio);
+}
+
+.don-transito__notas svg { width: 18px; color: var(--yellow); }
+
+.don-transito__demora {
+    margin: var(--espacio-6) 0 0;
+    padding-top: var(--espacio-5);
+    border-top: 1px solid var(--linea-oscura);
+    color: var(--sobre-oscuro);
+    font-size: var(--texto-sm);
+}
+
+.don-transito__demora[hidden] { display: none; }
+
+/* Blanco y subrayado, no amarillo: el degradado de la capa termina en --blue,
+   y el amarillo sobre ese extremo se queda en 4.16:1 — por debajo del mínimo
+   para texto normal. El subrayado además dice «esto es un enlace» sin
+   depender del color, que es lo que hay que hacer cuando es la única salida
+   de alguien a quien se le ha quedado la pantalla atascada. */
+.don-transito__demora a {
+    color: var(--white);
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    /* Se queda fija: aparece sin animar y la barra no se mueve. Quien pidió
+       que no haya movimiento no puede quedarse con una barra en bucle. */
+    .don-transito { animation: none; }
+    .don-transito__barra span { width: 100%; animation: none; }
+}
+
+/* La segunda línea del resultado: el matiz que responde a «¿y ahora qué?».
+   Menos peso que el cuerpo, más que una nota al pie. */
+.don-resultado__detalle {
+    max-width: 46ch;
+    margin: var(--espacio-4) auto 0;
+    padding: var(--espacio-3) var(--espacio-4);
+    border-radius: var(--radio-md);
+    background: var(--superficie-hundida);
+    color: var(--ink);
+    font-size: var(--texto-sm);
+    line-height: var(--alto-medio);
+}
+
+.don-resultado__detalle[hidden] { display: none; }
+
+/* En los desenlaces que piden atención, el matiz hereda el tono. */
+.don-resultado--rechazado .don-resultado__detalle { background: var(--coral-tenue); }
+.don-resultado--en_proceso .don-resultado__detalle { background: var(--yellow-tenue); }
+.don-resultado--aprobado .don-resultado__detalle { background: var(--teal-tenue); }

@@ -173,7 +173,7 @@
                                     <button type="button"
                                             class="boton boton--secundario"
                                             data-revertir-abrir
-                                            data-revertir-id="{{ $donacion->id }}">Revertir</button>
+                                            data-revertir-id="{{ $donacion->id }}">Deshacer verificación</button>
                                 @else
                                     <span class="admin-tabla__apunte">revisada</span>
                                 @endcan
@@ -198,7 +198,15 @@
         @foreach ($donaciones as $donacion)
             @continue(! auth('admin')->user()?->can('verificar', $donacion))
 
+            @php($fallos = $errors->getBag('verificacion_'.$donacion->id))
+
+            {{-- Si el servidor rechazo el envio, el dialogo se vuelve a abrir
+                 con lo que la persona habia escrito y el error JUNTO al campo
+                 que falla. Cerrarlo y dejar el mensaje arriba del todo es lo
+                 que hizo pensar a una administradora que el sistema estaba
+                 roto. --}}
             <dialog class="admin-dialogo" data-decidir="{{ $donacion->id }}"
+                    @if ($fallos->isNotEmpty()) data-abrir-al-cargar @endif
                     aria-labelledby="titulo-decidir-{{ $donacion->id }}">
                 <form method="POST" action="{{ route('admin.verificacion.verificar', $donacion) }}">
                     @csrf
@@ -220,7 +228,7 @@
                         revertir después, pero queda registrado.
                     </p>
 
-                    <div class="campo">
+                    <div @class(['campo', 'campo--error' => $fallos->has('monto_real')])>
                         <label for="monto-real-{{ $donacion->id }}">Monto que entró de verdad</label>
                         <span class="campo__ayuda">
                             Viene precargado con lo declarado. Compruébalo contra el comprobante
@@ -232,15 +240,23 @@
                                step="0.01"
                                min="0.01"
                                inputmode="decimal"
-                               value="{{ number_format((float) $donacion->monto_referencial, 2, '.', '') }}"
+                               required
+                               value="{{ old('monto_real', number_format((float) $donacion->monto_referencial, 2, '.', '')) }}"
+                               data-obligatorio="Escribe el monto que entró de verdad, según el comprobante."
+                               @if ($fallos->has('monto_real')) aria-invalid="true" @endif
                                data-monto-declarado="{{ number_format((float) $donacion->monto_referencial, 2, '.', '') }}">
+                        <strong class="campo__error" data-campo-error>{{ $fallos->first('monto_real') }}</strong>
                     </div>
 
                     {{-- Solo aparece cuando las dos cifras difieren. Lo muestra
                          `verificacion.js`; el servidor lo exige igualmente, así
                          que sin JavaScript el formulario se rechaza con el
                          mensaje correcto en lugar de colarse. --}}
-                    <div class="admin-aviso admin-aviso--error" data-aviso-diferencia hidden>
+                    <div class="admin-aviso admin-aviso--error" data-aviso-diferencia
+                         @if (! $fallos->has('confirmo_monto')) hidden @endif>
+                        @if ($fallos->has('confirmo_monto'))
+                            <strong class="campo__error">{{ $fallos->first('confirmo_monto') }}</strong>
+                        @endif
                         <label class="admin-casilla">
                             <input type="checkbox" name="confirmo_monto" value="1">
                             <span>
@@ -251,14 +267,19 @@
                         </label>
                     </div>
 
-                    <div class="campo">
+                    <div @class(['campo', 'campo--error' => $fallos->has('motivo')])>
                         <label for="motivo-{{ $donacion->id }}">Motivo del rechazo</label>
                         <span class="campo__ayuda">Solo si rechazas. Queda registrado.</span>
                         <input type="text"
                                id="motivo-{{ $donacion->id }}"
                                name="motivo"
                                maxlength="300"
+                               value="{{ old('motivo') }}"
+                               data-obligatorio-si="rechazar"
+                               data-obligatorio="Escribe por qué se rechaza. Queda registrado."
+                               @if ($fallos->has('motivo')) aria-invalid="true" @endif
                                placeholder="La captura no se lee / el monto no coincide con ningún movimiento">
+                        <strong class="campo__error" data-campo-error>{{ $fallos->first('motivo') }}</strong>
                     </div>
 
                     <div class="admin-dialogo__acciones">
@@ -285,14 +306,17 @@
             @continue(! auth('admin')->user()?->can('revertir', $donacion))
             @php($seRestan = $donacion->estado === \App\Enums\EstadoDonacion::APROBADO)
 
+            @php($fallosRev = $errors->getBag('reversion_'.$donacion->id))
+
             <dialog class="admin-dialogo" data-revertir="{{ $donacion->id }}"
+                    @if ($fallosRev->isNotEmpty()) data-abrir-al-cargar @endif
                     aria-labelledby="titulo-revertir-{{ $donacion->id }}">
                 <form method="POST" action="{{ route('admin.verificacion.revertir', $donacion) }}">
                     @csrf
 
                     <h2 id="titulo-revertir-{{ $donacion->id }}">
                         <i data-lucide="undo-2" aria-hidden="true"></i>
-                        Revertir la verificación
+                        Deshacer la verificación
                     </h2>
 
                     <p class="admin-dialogo__resumen">
@@ -307,11 +331,13 @@
                             La donación vuelve a la cola.
                         @endif
                         <br>
-                        No se borra nada: queda registrado quién la revirtió y por qué.
+                        <strong>No descarta la donación.</strong> Solo deshace la decisión anterior:
+                        vuelve a la cola como pendiente, a la espera de que alguien decida otra vez.
+                        No se borra nada y queda registrado quién la deshizo y por qué.
                     </p>
 
-                    <div class="campo">
-                        <label for="motivo-reversion-{{ $donacion->id }}">Motivo de la reversión</label>
+                    <div @class(['campo', 'campo--error' => $fallosRev->has('motivo_reversion')])>
+                        <label for="motivo-reversion-{{ $donacion->id }}">Motivo</label>
                         <span class="campo__ayuda">
                             Mínimo 10 caracteres. Es lo único que explicará, dentro de seis
                             meses, por qué esta donación dejó de estar verificada.
@@ -322,7 +348,13 @@
                                minlength="10"
                                maxlength="300"
                                required
+                               value="{{ old('motivo_reversion') }}"
+                               data-obligatorio="Escribe por qué se deshace. Queda registrado para siempre."
+                               data-minimo="10"
+                               data-minimo-mensaje="Explícalo con un poco más de detalle: mínimo 10 caracteres."
+                               @if ($fallosRev->has('motivo_reversion')) aria-invalid="true" @endif
                                placeholder="Aprobada por error: el comprobante era de otra donación">
+                        <strong class="campo__error" data-campo-error>{{ $fallosRev->first('motivo_reversion') }}</strong>
                     </div>
 
                     <div class="admin-dialogo__acciones">
@@ -330,7 +362,7 @@
                             @if ($seRestan)
                                 Sí, restar {{ $donacion->moneda }} {{ number_format((float) $donacion->monto_real, 2) }}
                             @else
-                                Sí, revertir
+                                Sí, deshacer
                             @endif
                         </button>
                         <button type="button" class="boton boton--secundario" data-revertir-cerrar>Cancelar</button>

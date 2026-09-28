@@ -400,6 +400,60 @@
         </form>
     @endif
 
+    {{--
+        CAPA DE TRÁNSITO HACIA MERCADO PAGO
+
+        Aparece en cuanto el servidor devuelve el `init_point` y se queda hasta
+        que el navegador cambia de página.
+
+        ── POR QUÉ NO ES UN MODAL ──────────────────────────────────────────────
+
+        Un modal tiene botón de cerrar porque hay algo que decidir. Aquí no hay
+        nada que decidir: la donación ya está registrada y el navegador va a
+        saltar a otro dominio. Ofrecer «cancelar» sugeriría que se puede parar,
+        y no se puede.
+
+        ── LO QUE TIENE QUE DECIR ──────────────────────────────────────────────
+
+        Que va a Mercado Pago, cuánto, que no guardamos su tarjeta, y —lo más
+        importante— QUE VA A VOLVER. Saltar a un dominio desconocido sin aviso
+        es el momento en que más gente abandona: no se rompió nada, pero lo
+        parece.
+
+        Nace oculto: sin JavaScript nunca se llega hasta aquí.
+    --}}
+    <div class="don-transito" data-transito hidden aria-live="assertive" role="status">
+        <div class="don-transito__caja">
+            <img class="don-transito__logo"
+                 src="/media/logo-comunitarios-oficial.png"
+                 alt=""
+                 aria-hidden="true"
+                 width="56" height="56">
+
+            <div class="don-transito__barra" aria-hidden="true"><span></span></div>
+
+            <p class="don-transito__titular">
+                Te estamos llevando a Mercado Pago para completar tu aporte de
+                <strong data-transito-monto>{{ $simboloMoneda }} 0.00</strong>
+            </p>
+
+            <ul class="don-transito__notas">
+                <li><i data-lucide="shield-check" aria-hidden="true"></i> El pago lo procesa Mercado Pago, con su propia seguridad.</li>
+                <li><i data-lucide="lock" aria-hidden="true"></i> No guardamos tu tarjeta en ningún momento.</li>
+                <li><i data-lucide="rotate-ccw" aria-hidden="true"></i> Al terminar volverás aquí para ver cómo quedó.</li>
+            </ul>
+
+            {{-- Si a los 8 segundos el navegador sigue aquí, algo bloqueó el
+                 salto. En vez de dejar a alguien mirando una barra que no
+                 avanza, se le da el enlace y se le dice que puede seguir a
+                 mano. --}}
+            <p class="don-transito__demora" data-transito-demora hidden>
+                Está tardando más de lo normal.
+                <a href="#" data-transito-enlace rel="noopener">Continuar al pago manualmente</a>
+            </p>
+        </div>
+    </div>
+
     @include('publico.componentes.dashboard')
 
 @endsection
