@@ -1,0 +1,25 @@
+/* =============================================================================
+   Tokens de marca de comunitarios.org — FUENTE ÚNICA
+
+   Los importan tanto `app.css` (sitio público) como `admin.css` (panel), que
+   se compilan como bundles separados. Cambiar la paleta se hace aquí y en
+   ningún otro sitio.
+
+   Ningún archivo del proyecto debe declarar un color hex fuera de este.
+   ========================================================================== */
+
+:root {
+    --navy: #052743;
+    --navy-deep: #031d35;
+    --blue: #064e9f;
+    --coral: #f3443f;
+    --yellow: #f5ac18;
+    --teal: #0c9d9b;
+    --ink: #092846;
+    --muted: #52697d;
+    --line: #dbe3e9;
+    --paper: #f7f8f8;
+    --white: #fff;
+    --shadow: 0 16px 38px rgba(4, 31, 55, 0.13);
+    --container: 1240px;
+}

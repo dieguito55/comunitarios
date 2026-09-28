@@ -131,6 +131,36 @@ return [
             'handler' => NullHandler::class,
         ],
 
+        /*
+        | Canales del modulo de donaciones. 90 dias de retencion: es el plazo en
+        | el que Mercado Pago admite reclamos y contracargos, asi que el rastro
+        | de un pago debe sobrevivir al menos ese tiempo.
+        */
+
+        'payments' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/payments.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'max_files' => 90,
+            'replace_placeholders' => true,
+        ],
+
+        'webhooks' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/webhooks.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'max_files' => 90,
+            'replace_placeholders' => true,
+        ],
+
+        'admin' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/admin.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'max_files' => 90,
+            'replace_placeholders' => true,
+        ],
+
         'emergency' => [
             'path' => storage_path('logs/laravel.log'),
         ],

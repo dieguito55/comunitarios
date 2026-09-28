@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\AdminUser;
 use App\Models\User;
 
 return [
@@ -42,6 +43,18 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+
+        /*
+        | Guard propio del panel, separado del `web` por defecto.
+        |
+        | Los administradores de la fundación no son "usuarios" de la
+        | plataforma: viven en otra tabla, tienen roles distintos y una sesión
+        | que no debe mezclarse con nada del lado público.
+        */
+        'admin' => [
+            'driver' => 'session',
+            'provider' => 'admins',
+        ],
     ],
 
     /*
@@ -67,10 +80,10 @@ return [
             'model' => env('AUTH_MODEL', User::class),
         ],
 
-        // 'users' => [
-        //     'driver' => 'database',
-        //     'table' => 'users',
-        // ],
+        'admins' => [
+            'driver' => 'eloquent',
+            'model' => AdminUser::class,
+        ],
     ],
 
     /*

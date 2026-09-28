@@ -1,4 +1,8 @@
 @import 'tailwindcss';
+
+/* La paleta vive en un solo sitio y la comparten este bundle y el del panel.
+   Los valores son exactamente los mismos que habia aqui. */
+@import './tokens.css';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 @source '../**/*.blade.php';
@@ -6,22 +10,6 @@
 
 @theme {
     --font-sans: 'Manrope', ui-sans-serif, system-ui, sans-serif;
-}
-
-:root {
-    --navy: #052743;
-    --navy-deep: #031d35;
-    --blue: #064e9f;
-    --coral: #f3443f;
-    --yellow: #f5ac18;
-    --teal: #0c9d9b;
-    --ink: #092846;
-    --muted: #52697d;
-    --line: #dbe3e9;
-    --paper: #f7f8f8;
-    --white: #fff;
-    --shadow: 0 16px 38px rgba(4, 31, 55, .13);
-    --container: 1240px;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -415,4 +403,369 @@ section[id],footer[id] { scroll-margin-top: 78px; }
 @media (prefers-reduced-motion: reduce) {
     *,*::before,*::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
     .reveal { opacity: 1; transform: none; }
+}
+
+/* =============================================================================
+   FASE 4 — Sitio público de donaciones
+   =============================================================================
+   Añadido al final para no tocar nada de lo que ya usa la portada.
+
+   Ni un color literal: todo sale de los tokens de tokens.css, y los tonos
+   intermedios de color-mix() sobre ellos. Los estados se pintan con clases
+   (.estado--activo, .fondo--teal); el JavaScript nunca decide un color.
+   ========================================================================== */
+
+.don-pagina {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: Manrope, system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+}
+
+.don-contenedor {
+    max-width: var(--container);
+    margin: 0 auto;
+    padding: 1.5rem 1rem 4rem;
+}
+
+.don-saltar {
+    position: absolute;
+    left: -9999px;
+    background: var(--white);
+    color: var(--ink);
+    padding: .75rem 1rem;
+    z-index: 100;
+}
+
+.don-saltar:focus { left: 0; }
+
+:where(.don-pagina a, .don-pagina button, .don-pagina input, .don-pagina select, .don-pagina textarea):focus-visible {
+    outline: 3px solid var(--blue);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+.don-titulo {
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    letter-spacing: -.02em;
+    margin: 0 0 .25rem;
+}
+
+.don-manuscrito {
+    font-family: Caveat, cursive;
+    font-size: 1.4em;
+    font-weight: 600;
+    color: var(--teal);
+}
+
+.don-entradilla { color: var(--muted); margin: 0 0 1.5rem; max-width: 60ch; }
+
+/* ── Pasos ───────────────────────────────────────────────────────────────── */
+
+.don-paso {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 1.25rem;
+    margin-bottom: 1.25rem;
+}
+
+.don-paso__titulo {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    font-size: 1.15rem;
+    margin: 0 0 1rem;
+}
+
+.don-paso__numero {
+    display: grid;
+    place-items: center;
+    width: 1.9rem;
+    height: 1.9rem;
+    border-radius: 50%;
+    background: var(--navy);
+    color: var(--white);
+    font-size: .95rem;
+    font-weight: 800;
+    flex: none;
+}
+
+.don-paso[hidden] { display: none !important; }
+
+/* ── Selector de fondos: radios reales, no divs con onclick ─────────────── */
+
+.don-fondos {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1rem;
+    border: 0;
+    margin: 0;
+    padding: 0;
+}
+
+.don-fondos legend { font-weight: 700; margin-bottom: .5rem; }
+
+.don-fondo {
+    position: relative;
+    display: block;
+    border: 2px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--white);
+    cursor: pointer;
+}
+
+.don-fondo:hover { border-color: color-mix(in srgb, var(--fondo-color, var(--teal)) 50%, var(--line)); }
+
+.don-fondo:has(input:checked) {
+    border-color: var(--fondo-color, var(--teal));
+    box-shadow: var(--shadow);
+}
+
+/* El radio sigue existiendo y siendo enfocable; solo no se dibuja encima. */
+.don-fondo input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+}
+
+.don-fondo:has(input:focus-visible) { outline: 3px solid var(--blue); outline-offset: 2px; }
+
+.don-fondo__imagen {
+    width: 100%;
+    height: 140px;
+    object-fit: cover;
+    display: block;
+    background: color-mix(in srgb, var(--fondo-color, var(--teal)) 18%, var(--white));
+}
+
+.don-fondo__cuerpo { padding: .9rem; }
+.don-fondo__nombre { margin: 0 0 .3rem; font-size: 1.05rem; }
+.don-fondo__resumen { margin: 0 0 .75rem; color: var(--muted); font-size: .92rem; }
+
+.don-fondo__cifra { font-weight: 800; font-size: 1.15rem; }
+.don-fondo__cifra small { display: block; font-size: .8rem; font-weight: 600; color: var(--muted); }
+
+/* ── Barra de progreso ───────────────────────────────────────────────────── */
+
+.don-progreso {
+    background: color-mix(in srgb, var(--line) 60%, var(--white));
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    height: .55rem;
+    overflow: hidden;
+    margin: .5rem 0 .35rem;
+}
+
+.don-progreso__relleno {
+    height: 100%;
+    background: var(--fondo-color, var(--teal));
+    width: 0;
+    transition: width .6s ease-out;
+}
+
+.don-progreso__texto { font-size: .85rem; color: var(--muted); }
+
+/* ── Colores de fondo: nombre de token, nunca un hex en el HTML ─────────── */
+
+.fondo--teal { --fondo-color: var(--teal); }
+.fondo--coral { --fondo-color: var(--coral); }
+.fondo--yellow { --fondo-color: var(--yellow); }
+.fondo--blue { --fondo-color: var(--blue); }
+.fondo--navy { --fondo-color: var(--navy); }
+
+/* ── Estados ─────────────────────────────────────────────────────────────── */
+
+.estado {
+    display: inline-block;
+    padding: .2rem .6rem;
+    border-radius: 999px;
+    font-size: .76rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .02em;
+    border: 1px solid var(--line);
+}
+
+.estado--activo, .estado--aprobado {
+    background: color-mix(in srgb, var(--teal) 12%, var(--white));
+    color: color-mix(in srgb, var(--teal) 70%, var(--ink));
+    border-color: color-mix(in srgb, var(--teal) 45%, var(--white));
+}
+
+.estado--pendiente, .estado--en_proceso, .estado--pausado {
+    background: color-mix(in srgb, var(--yellow) 16%, var(--white));
+    color: color-mix(in srgb, var(--ink) 75%, var(--yellow));
+    border-color: color-mix(in srgb, var(--yellow) 55%, var(--white));
+}
+
+.estado--rechazado, .estado--cerrado {
+    background: color-mix(in srgb, var(--coral) 10%, var(--white));
+    color: color-mix(in srgb, var(--coral) 65%, var(--ink));
+    border-color: color-mix(in srgb, var(--coral) 45%, var(--white));
+}
+
+/* ── Campos ──────────────────────────────────────────────────────────────── */
+
+.don-campo { margin-bottom: 1rem; }
+.don-campo label { display: block; font-weight: 700; margin-bottom: .3rem; }
+.don-campo__ayuda { display: block; font-size: .87rem; color: var(--muted); margin-bottom: .35rem; }
+
+.don-campo input[type="text"],
+.don-campo input[type="email"],
+.don-campo input[type="tel"],
+.don-campo input[type="number"],
+.don-campo select {
+    width: 100%;
+    padding: .65rem .7rem;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    font: inherit;
+    color: var(--ink);
+    background: var(--white);
+}
+
+.don-campo--error input, .don-campo--error select { border-color: var(--coral); border-width: 2px; }
+
+.don-campo__error {
+    display: block;
+    margin-top: .3rem;
+    font-size: .89rem;
+    font-weight: 600;
+    color: color-mix(in srgb, var(--coral) 75%, var(--ink));
+}
+
+.don-campo__error:empty { display: none; }
+
+.don-casilla { display: flex; gap: .6rem; align-items: flex-start; margin-bottom: 1rem; }
+.don-casilla input { margin-top: .25rem; flex: none; width: 1.1rem; height: 1.1rem; }
+.don-casilla label { font-weight: 600; }
+
+.don-rejilla-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0 1rem; }
+
+/* ── Montos sugeridos ────────────────────────────────────────────────────── */
+
+.don-montos { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: .75rem; border: 0; padding: 0; }
+
+.don-monto {
+    border: 2px solid var(--line);
+    border-radius: 10px;
+    background: var(--white);
+    padding: .55rem 1rem;
+    font: inherit;
+    font-weight: 700;
+    color: var(--ink);
+    cursor: pointer;
+}
+
+.don-monto[aria-pressed="true"] {
+    border-color: var(--teal);
+    background: color-mix(in srgb, var(--teal) 12%, var(--white));
+}
+
+/* ── Botones ─────────────────────────────────────────────────────────────── */
+
+.don-boton {
+    display: inline-block;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    padding: .85rem 1.4rem;
+    font: inherit;
+    font-weight: 800;
+    cursor: pointer;
+    text-decoration: none;
+    background: var(--coral);
+    color: var(--white);
+}
+
+.don-boton:hover { background: color-mix(in srgb, var(--coral) 88%, var(--ink)); }
+
+.don-boton--secundario { background: var(--white); color: var(--ink); border-color: var(--line); }
+.don-boton[disabled] { opacity: .55; cursor: progress; }
+
+/* Hueco reservado para el botón de Yape/Plin de la fase 5. */
+.don-pagos { display: flex; flex-direction: column; gap: .6rem; }
+
+.don-pagos__pendiente {
+    border: 1px dashed var(--line);
+    border-radius: 12px;
+    padding: .7rem 1rem;
+    color: var(--muted);
+    font-size: .9rem;
+    text-align: center;
+}
+
+/* ── Avisos ──────────────────────────────────────────────────────────────── */
+
+.don-aviso {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: .9rem 1rem;
+    margin-bottom: 1rem;
+    background: var(--white);
+}
+
+.don-aviso--error {
+    background: color-mix(in srgb, var(--coral) 8%, var(--white));
+    border-color: color-mix(in srgb, var(--coral) 40%, var(--white));
+}
+
+.don-aviso--exito {
+    background: color-mix(in srgb, var(--teal) 10%, var(--white));
+    border-color: color-mix(in srgb, var(--teal) 40%, var(--white));
+}
+
+.don-aviso--atencion {
+    background: color-mix(in srgb, var(--yellow) 14%, var(--white));
+    border-color: color-mix(in srgb, var(--yellow) 50%, var(--white));
+}
+
+.don-aviso:empty { display: none; }
+
+/* ── Dashboard en vivo ───────────────────────────────────────────────────── */
+
+.don-dashboard { padding: 2.5rem 0; background: var(--white); border-top: 1px solid var(--line); }
+
+.don-totales { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+
+.don-cifra { font-size: clamp(1.7rem, 5vw, 2.6rem); font-weight: 800; letter-spacing: -.02em; line-height: 1.1; }
+.don-cifra small { display: block; font-size: .85rem; font-weight: 600; color: var(--muted); letter-spacing: 0; }
+
+.don-feed { list-style: none; margin: 0; padding: 0; display: grid; gap: .5rem; }
+
+.don-feed li {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: baseline;
+    padding: .6rem .8rem;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--white);
+}
+
+.don-feed__cuando { color: var(--muted); font-size: .85rem; }
+.don-feed__monto { font-weight: 800; white-space: nowrap; }
+.don-feed__vacio { color: var(--muted); }
+
+/* ── Resultado del pago ──────────────────────────────────────────────────── */
+
+.don-resultado { max-width: 44rem; margin: 0 auto; text-align: center; padding: 2rem 1rem 4rem; }
+.don-resultado h1 { font-size: clamp(1.5rem, 4vw, 2.2rem); margin: 0 0 .5rem; }
+.don-resultado p { color: var(--muted); margin: 0 0 1rem; }
+.don-resultado__acciones { display: flex; flex-wrap: wrap; gap: .6rem; justify-content: center; }
+
+/* ── Móvil ───────────────────────────────────────────────────────────────── */
+
+@media (max-width: 420px) {
+    .don-contenedor { padding: 1rem .75rem 3rem; }
+    .don-paso { padding: 1rem .85rem; }
+    .don-boton, .don-boton--secundario { width: 100%; text-align: center; }
+    .don-monto { flex: 1 1 calc(50% - .5rem); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .don-progreso__relleno { transition: none; }
 }

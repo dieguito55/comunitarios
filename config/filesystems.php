@@ -47,6 +47,45 @@ return [
             'report' => false,
         ],
 
+        /*
+        | Comprobantes del canal QR. Deuda tecnica 5: en el sistema de
+        | referencia vivian en una carpeta publica y cualquiera con la URL veia
+        | la captura bancaria de un donante. Este disco esta fuera de public/,
+        | no tiene 'url' y 'serve' esta desactivado: la unica forma de leer un
+        | comprobante es una ruta autenticada protegida por Policy.
+        */
+
+        'comprobantes' => [
+            'driver' => 'local',
+            'root' => storage_path('app/private/comprobantes'),
+            'serve' => false,
+            'visibility' => 'private',
+            'throw' => false,
+            'report' => false,
+        ],
+
+        /*
+        | Imágenes de los fondos.
+        |
+        | Escribe DIRECTAMENTE dentro de public/ en lugar de usar
+        | `php artisan storage:link`: en hosting compartido ese enlace
+        | simbólico a veces no se puede crear, y entonces ninguna imagen del
+        | panel se vería. Aquí no hay enlace que pueda faltar.
+        |
+        | Contrasta con el disco `comprobantes`, que es justo lo contrario: ese
+        | guarda capturas bancarias y por eso vive FUERA de public/.
+        */
+
+        'fondos' => [
+            'driver' => 'local',
+            'root' => public_path('uploads/fondos'),
+            'url' => '/uploads/fondos',
+            'visibility' => 'public',
+            'serve' => false,
+            'throw' => false,
+            'report' => false,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),
