@@ -536,12 +536,44 @@ final class SitioPublicoTest extends TestCase
             // fuera antes de buscar, o darían un falso positivo.
             $html = (string) preg_replace('/&#\d+;/', '', $this->html($url));
 
+            // Única excepción: el <meta name="theme-color">, que pinta la barra
+            // del navegador en móvil y no puede referirse a una variable CSS.
+            // Se comprueba aparte, en el test siguiente.
+            $html = (string) preg_replace('/<meta name="theme-color"[^>]*>/', '', $html);
+
             $this->assertSame(
                 0,
                 preg_match_all('/#[0-9a-fA-F]{3,8}\b/', $html),
                 "Hay un color hex en el HTML de {$url}."
             );
         }
+    }
+
+    /**
+     * El único color literal del proyecto tiene que seguir siendo el token.
+     *
+     * Un `<meta>` no puede usar var(--navy-deep), así que ese valor se escribe
+     * a mano. Este caso existe para que, si alguien cambia la paleta, se entere
+     * de que también hay que cambiarlo aquí — que es justo lo que no había
+     * pasado: el meta llevaba un navy que ya no existía en tokens.css.
+     */
+    public function test_el_theme_color_coincide_con_el_token_de_marca(): void
+    {
+        $this->fondoDePrueba();
+
+        $tokens = (string) file_get_contents(resource_path('css/tokens.css'));
+
+        $this->assertSame(
+            1,
+            preg_match('/--navy-deep:\s*(#[0-9a-fA-F]{3,8})\s*;/', $tokens, $coincidencias),
+            'No se encontró --navy-deep en tokens.css.'
+        );
+
+        $this->assertStringContainsString(
+            '<meta name="theme-color" content="'.$coincidencias[1].'">',
+            $this->html(route('donar')),
+            'El theme-color se desvió de --navy-deep.'
+        );
     }
 
     // ── AT-94: el navegador no puede afirmar un estado ───────────────────────

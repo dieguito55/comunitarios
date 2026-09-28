@@ -3,6 +3,15 @@
 @section('titulo', 'Resultado de tu donación')
 @section('noindex', true)
 
+@section('etiqueta', 'ESTADO DE TU APORTE')
+@section('encabezado', 'Gracias por dar el paso')
+
+@section('cta-cabecera')
+    <a class="button button-coral header-cta" href="{{ route('home') }}">
+        Al inicio <i data-lucide="arrow-right"></i>
+    </a>
+@endsection
+
 @section('contenido')
 
     {{--
@@ -18,22 +27,36 @@
         que se está confirmando.
     --}}
 
-    <section class="don-resultado"
+    @php
+        $iconos = [
+            'aprobado' => 'loader-circle',
+            'rechazado' => 'circle-x',
+            'en_proceso' => 'clock',
+            'desconocido' => 'search',
+        ];
+    @endphp
+
+    <section @class([
+                 'don-resultado',
+                 'don-resultado--'.$estadoProvisional => $estadoProvisional !== 'desconocido',
+                 'don-resultado--esperando' => $estadoProvisional !== 'rechazado',
+             ])
              data-resultado
              data-contacto="{{ $correoContacto }}">
 
-        <p>
-            <span data-resultado-estado
-                  @class(['estado', 'estado--en_proceso' => $estadoProvisional === 'en_proceso'])
-                  @if ($estadoProvisional === 'desconocido') hidden @endif>
-                @switch($estadoProvisional)
-                    @case('aprobado') Confirmando @break
-                    @case('rechazado') Rechazado @break
-                    @case('en_proceso') En proceso @break
-                    @default
-                @endswitch
-            </span>
-        </p>
+        <div class="don-resultado__orbe" data-resultado-icono aria-hidden="true">
+            <i data-lucide="{{ $iconos[$estadoProvisional] ?? 'search' }}"></i>
+        </div>
+
+        <span data-resultado-estado
+              @class(['estado', 'estado--en_proceso' => $estadoProvisional === 'en_proceso'])
+              @if ($estadoProvisional === 'desconocido' || $estadoProvisional === 'aprobado') hidden @endif>
+            @switch($estadoProvisional)
+                @case('rechazado') Rechazado @break
+                @case('en_proceso') En proceso @break
+                @default
+            @endswitch
+        </span>
 
         <h1 data-resultado-titulo>
             @switch($estadoProvisional)
@@ -73,8 +96,12 @@
         <div class="don-resultado__acciones"
              data-resultado-acciones
              @if ($estadoProvisional !== 'rechazado' && $estadoProvisional !== 'desconocido') hidden @endif>
-            <a class="don-boton" href="{{ route('donar') }}">Intentar de nuevo</a>
-            <a class="don-boton don-boton--secundario" href="{{ route('home') }}">Volver al inicio</a>
+            <a class="button button-coral" href="{{ route('donar') }}">
+                Intentar de nuevo <i data-lucide="rotate-ccw"></i>
+            </a>
+            <a class="button button-ghost" href="{{ route('home') }}">
+                Volver al inicio
+            </a>
         </div>
 
         <p class="don-campo__ayuda">

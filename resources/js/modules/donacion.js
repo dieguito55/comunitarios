@@ -1,4 +1,4 @@
-import { almacen, enviarJson, escaparHtml } from './api.js';
+import { almacen, enviarJson, escaparHtml, formatearMonto } from './api.js';
 
 /**
  * Formulario de donación: dos pasos, sin recargar.
@@ -33,6 +33,7 @@ export function iniciarDonacion() {
 
     configurarSeleccionDeFondo(formulario, paso2);
     configurarMontosSugeridos(formulario, campoMonto);
+    configurarResumen(formulario, campoMonto);
 
     formulario.addEventListener('submit', async (evento) => {
         evento.preventDefault();
@@ -83,6 +84,45 @@ export function iniciarDonacion() {
             'error'
         );
     });
+}
+
+/**
+ * Resumen lateral: el proyecto elegido y el monto, siempre a la vista.
+ *
+ * Es la unica parte de la pagina que resume lo que esta a punto de pasar. Sin
+ * ella hay que recordar de memoria que se eligio arriba mientras se rellenan
+ * los datos de abajo, y en el movil el fondo elegido queda fuera de pantalla.
+ */
+function configurarResumen(formulario, campoMonto) {
+    const nodoFondo = document.querySelector('[data-resumen-fondo]');
+    const nodoMonto = document.querySelector('[data-resumen-monto]');
+    const moneda = formulario.dataset.moneda || 'PEN';
+
+    const refrescar = () => {
+        if (nodoFondo) {
+            const elegido = formulario.querySelector('input[name="fondo_id"]:checked');
+            const tarjeta = elegido ? elegido.closest('[data-fondo-nombre]') : null;
+
+            nodoFondo.textContent = tarjeta ? tarjeta.dataset.fondoNombre : 'Sin elegir';
+        }
+
+        if (nodoMonto) {
+            nodoMonto.textContent = formatearMonto(
+                Number(String(campoMonto ? campoMonto.value : '').replace(',', '.')) || 0,
+                moneda
+            );
+        }
+    };
+
+    formulario.querySelectorAll('input[name="fondo_id"]').forEach((radio) => {
+        radio.addEventListener('change', refrescar);
+    });
+
+    if (campoMonto) {
+        campoMonto.addEventListener('input', refrescar);
+    }
+
+    refrescar();
 }
 
 /** Paso 1 → paso 2. Con un solo fondo, el paso 1 ya viene resuelto. */

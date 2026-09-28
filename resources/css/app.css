@@ -406,169 +406,270 @@ section[id],footer[id] { scroll-margin-top: 78px; }
 }
 
 /* =============================================================================
-   FASE 4 — Sitio público de donaciones
+   SITIO PÚBLICO DE DONACIONES
    =============================================================================
-   Añadido al final para no tocar nada de lo que ya usa la portada.
+   Comparte el lenguaje visual de la portada en lugar de inventar otro: las
+   páginas de donación reutilizan .container, .button, .button-coral, .pill y
+   .icon-orb, que ya están definidos arriba. Aquí solo vive lo que no existía:
+   el formulario, las tarjetas de fondo y la pantalla de resultado.
 
    Ni un color literal: todo sale de los tokens de tokens.css, y los tonos
    intermedios de color-mix() sobre ellos. Los estados se pintan con clases
-   (.estado--activo, .fondo--teal); el JavaScript nunca decide un color.
+   (.estado--aprobado, .fondo--teal); el JavaScript nunca decide un color.
    ========================================================================== */
 
-.don-pagina {
-    background: var(--paper);
-    color: var(--ink);
-    font-family: Manrope, system-ui, -apple-system, sans-serif;
-    min-height: 100vh;
+.don-pagina { background: var(--paper); }
+
+/* ── Banda de cabecera ─────────────────────────────────────────────────────
+   La misma gramática que el hero de la portada —fondo navy, arco amarillo,
+   titular de peso 800— pero a media altura, porque aquí el protagonista es el
+   formulario y no el mensaje. */
+
+.don-hero {
+    position: relative;
+    margin-top: 61px;
+    overflow: hidden;
+    color: var(--white);
+    background: linear-gradient(135deg, var(--navy-deep), var(--navy) 55%, var(--blue));
 }
 
-.don-contenedor {
-    max-width: var(--container);
-    margin: 0 auto;
-    padding: 1.5rem 1rem 4rem;
-}
-
-.don-saltar {
+.don-hero::before {
     position: absolute;
-    left: -9999px;
-    background: var(--white);
-    color: var(--ink);
-    padding: .75rem 1rem;
-    z-index: 100;
+    top: -120px;
+    right: -110px;
+    width: 520px;
+    height: 300px;
+    border: 1px solid color-mix(in srgb, var(--yellow) 58%, transparent);
+    border-radius: 50%;
+    transform: rotate(-6deg);
+    content: '';
 }
 
-.don-saltar:focus { left: 0; }
+.don-hero__inner { position: relative; z-index: 1; padding-block: 34px 40px; }
 
-:where(.don-pagina a, .don-pagina button, .don-pagina input, .don-pagina select, .don-pagina textarea):focus-visible {
-    outline: 3px solid var(--blue);
-    outline-offset: 2px;
-    border-radius: 4px;
+.don-hero .pill { margin-bottom: 12px; }
+
+.don-hero h1 {
+    margin: 0;
+    max-width: 18ch;
+    font-size: clamp(1.9rem, 3.4vw, 2.9rem);
+    font-weight: 800;
+    letter-spacing: -.045em;
+    line-height: 1.04;
 }
 
-.don-titulo {
-    font-size: clamp(1.6rem, 4vw, 2.4rem);
-    letter-spacing: -.02em;
-    margin: 0 0 .25rem;
-}
-
-.don-manuscrito {
+.don-hero h1 em {
+    color: var(--yellow);
     font-family: Caveat, cursive;
-    font-size: 1.4em;
-    font-weight: 600;
-    color: var(--teal);
+    font-size: 1.16em;
+    font-style: normal;
+    font-weight: 700;
 }
 
-.don-entradilla { color: var(--muted); margin: 0 0 1.5rem; max-width: 60ch; }
-
-/* ── Pasos ───────────────────────────────────────────────────────────────── */
-
-.don-paso {
-    background: var(--white);
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    padding: 1.25rem;
-    margin-bottom: 1.25rem;
+.don-hero p {
+    max-width: 58ch;
+    margin: 12px 0 0;
+    color: color-mix(in srgb, var(--white) 82%, transparent);
+    font-size: .92rem;
+    line-height: 1.6;
 }
 
-.don-paso__titulo {
+.don-migas {
     display: flex;
     align-items: center;
-    gap: .6rem;
-    font-size: 1.15rem;
-    margin: 0 0 1rem;
+    gap: 7px;
+    margin-bottom: 14px;
+    color: color-mix(in srgb, var(--white) 62%, transparent);
+    font-size: .7rem;
+    font-weight: 600;
 }
 
-.don-paso__numero {
+.don-migas a { color: inherit; text-decoration: none; }
+.don-migas a:hover { color: var(--yellow); }
+.don-migas svg { width: 13px; }
+
+/* ── Rejilla de la página ──────────────────────────────────────────────── */
+
+.don-contenedor { padding-block: 30px 64px; }
+
+.don-layout {
     display: grid;
-    place-items: center;
-    width: 1.9rem;
-    height: 1.9rem;
-    border-radius: 50%;
-    background: var(--navy);
-    color: var(--white);
-    font-size: .95rem;
-    font-weight: 800;
-    flex: none;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    align-items: start;
+    gap: 26px;
 }
 
-.don-paso[hidden] { display: none !important; }
+/* ── Tarjetas ──────────────────────────────────────────────────────────── */
 
-/* ── Selector de fondos: radios reales, no divs con onclick ─────────────── */
-
-.don-fondos {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 1rem;
-    border: 0;
-    margin: 0;
-    padding: 0;
-}
-
-.don-fondos legend { font-weight: 700; margin-bottom: .5rem; }
-
-.don-fondo {
-    position: relative;
-    display: block;
-    border: 2px solid var(--line);
-    border-radius: 12px;
-    overflow: hidden;
+.don-panel {
+    padding: 24px;
+    border: 1px solid color-mix(in srgb, var(--navy) 9%, transparent);
+    border-radius: 18px;
     background: var(--white);
-    cursor: pointer;
-}
-
-.don-fondo:hover { border-color: color-mix(in srgb, var(--fondo-color, var(--teal)) 50%, var(--line)); }
-
-.don-fondo:has(input:checked) {
-    border-color: var(--fondo-color, var(--teal));
     box-shadow: var(--shadow);
 }
 
-/* El radio sigue existiendo y siendo enfocable; solo no se dibuja encima. */
+.don-panel + .don-panel { margin-top: 20px; }
+
+.don-panel__titulo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0 0 4px;
+    font-size: 1.12rem;
+    font-weight: 800;
+    letter-spacing: -.035em;
+}
+
+.don-panel__numero {
+    display: grid;
+    width: 30px;
+    height: 30px;
+    flex: none;
+    place-items: center;
+    border-radius: 50%;
+    color: var(--white);
+    background: linear-gradient(135deg, var(--blue), var(--navy));
+    font-size: .82rem;
+    font-weight: 800;
+}
+
+.don-panel__ayuda {
+    margin: 0 0 18px 42px;
+    color: var(--muted);
+    font-size: .8rem;
+}
+
+.don-paso[hidden] { display: none; }
+
+.don-paso__accion { margin: 18px 0 0; }
+.don-campo__separado { margin-top: 12px; }
+
+/* ── Selector de fondos ────────────────────────────────────────────────── */
+
+.don-fondos {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    gap: 14px;
+    grid-template-columns: repeat(auto-fill, minmax(232px, 1fr));
+}
+
+.don-fondo {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1.5px solid var(--line);
+    border-radius: 15px;
+    background: var(--white);
+    cursor: pointer;
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+
+.don-fondo:hover {
+    border-color: color-mix(in srgb, var(--blue) 45%, transparent);
+    box-shadow: 0 14px 30px color-mix(in srgb, var(--navy) 14%, transparent);
+    transform: translateY(-3px);
+}
+
+/* El radio existe y es tabulable, pero se dibuja como una marca en la esquina:
+   así el foco del teclado se ve sobre la tarjeta entera. */
 .don-fondo input {
     position: absolute;
-    opacity: 0;
     width: 1px;
     height: 1px;
+    opacity: 0;
 }
 
-.don-fondo:has(input:focus-visible) { outline: 3px solid var(--blue); outline-offset: 2px; }
+.don-fondo::after {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 2;
+    display: grid;
+    width: 24px;
+    height: 24px;
+    place-items: center;
+    border: 2px solid var(--white);
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--navy) 35%, transparent);
+    color: var(--white);
+    content: '';
+    transition: background .18s ease, transform .18s ease;
+}
+
+.don-fondo:has(input:checked) {
+    border-color: var(--coral);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--coral) 20%, transparent),
+                0 16px 34px color-mix(in srgb, var(--coral) 22%, transparent);
+}
+
+.don-fondo:has(input:checked)::after {
+    background: var(--coral);
+    content: '✓';
+    font-size: .74rem;
+    font-weight: 800;
+}
+
+.don-fondo:has(input:focus-visible) {
+    outline: 3px solid color-mix(in srgb, var(--blue) 55%, transparent);
+    outline-offset: 2px;
+}
 
 .don-fondo__imagen {
-    width: 100%;
-    height: 140px;
-    object-fit: cover;
     display: block;
-    background: color-mix(in srgb, var(--fondo-color, var(--teal)) 18%, var(--white));
+    width: 100%;
+    height: 118px;
+    border-bottom: 1px solid var(--line);
+    background: linear-gradient(135deg, var(--navy), var(--blue));
+    object-fit: cover;
 }
 
-.don-fondo__cuerpo { padding: .9rem; }
-.don-fondo__nombre { margin: 0 0 .3rem; font-size: 1.05rem; }
-.don-fondo__resumen { margin: 0 0 .75rem; color: var(--muted); font-size: .92rem; }
+.don-fondo__cuerpo { display: flex; flex: 1; flex-direction: column; padding: 13px 14px 15px; gap: 5px; }
 
-.don-fondo__cifra { font-weight: 800; font-size: 1.15rem; }
-.don-fondo__cifra small { display: block; font-size: .8rem; font-weight: 600; color: var(--muted); }
+.don-fondo__nombre { font-size: .97rem; font-weight: 800; letter-spacing: -.03em; }
 
-/* ── Barra de progreso ───────────────────────────────────────────────────── */
-
-.don-progreso {
-    background: color-mix(in srgb, var(--line) 60%, var(--white));
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    height: .55rem;
+.don-fondo__resumen {
+    display: -webkit-box;
     overflow: hidden;
-    margin: .5rem 0 .35rem;
+    color: var(--muted);
+    font-size: .76rem;
+    line-height: 1.45;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
 }
 
-.don-progreso__relleno {
-    height: 100%;
+.don-fondo__cifra {
+    margin-top: auto;
+    padding-top: 9px;
+    color: var(--navy);
+    font-size: 1.02rem;
+    font-weight: 800;
+    letter-spacing: -.03em;
+}
+
+.don-fondo__cifra small {
+    display: block;
+    margin-top: 1px;
+    color: var(--muted);
+    font-size: .68rem;
+    font-weight: 600;
+    letter-spacing: 0;
+}
+
+/* Franja de color del fondo, arriba de la tarjeta. */
+.don-fondo::before {
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    z-index: 1;
+    height: 4px;
     background: var(--fondo-color, var(--teal));
-    width: 0;
-    transition: width .6s ease-out;
+    content: '';
 }
-
-.don-progreso__texto { font-size: .85rem; color: var(--muted); }
-
-/* ── Colores de fondo: nombre de token, nunca un hex en el HTML ─────────── */
 
 .fondo--teal { --fondo-color: var(--teal); }
 .fondo--coral { --fondo-color: var(--coral); }
@@ -576,196 +677,545 @@ section[id],footer[id] { scroll-margin-top: 78px; }
 .fondo--blue { --fondo-color: var(--blue); }
 .fondo--navy { --fondo-color: var(--navy); }
 
-/* ── Estados ─────────────────────────────────────────────────────────────── */
+/* ── Barra de progreso ─────────────────────────────────────────────────── */
 
-.estado {
-    display: inline-block;
-    padding: .2rem .6rem;
-    border-radius: 999px;
-    font-size: .76rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: .02em;
-    border: 1px solid var(--line);
-}
-
-.estado--activo, .estado--aprobado {
-    background: color-mix(in srgb, var(--teal) 12%, var(--white));
-    color: color-mix(in srgb, var(--teal) 70%, var(--ink));
-    border-color: color-mix(in srgb, var(--teal) 45%, var(--white));
-}
-
-.estado--pendiente, .estado--en_proceso, .estado--pausado {
-    background: color-mix(in srgb, var(--yellow) 16%, var(--white));
-    color: color-mix(in srgb, var(--ink) 75%, var(--yellow));
-    border-color: color-mix(in srgb, var(--yellow) 55%, var(--white));
-}
-
-.estado--rechazado, .estado--cerrado {
-    background: color-mix(in srgb, var(--coral) 10%, var(--white));
-    color: color-mix(in srgb, var(--coral) 65%, var(--ink));
-    border-color: color-mix(in srgb, var(--coral) 45%, var(--white));
-}
-
-/* ── Campos ──────────────────────────────────────────────────────────────── */
-
-.don-campo { margin-bottom: 1rem; }
-.don-campo label { display: block; font-weight: 700; margin-bottom: .3rem; }
-.don-campo__ayuda { display: block; font-size: .87rem; color: var(--muted); margin-bottom: .35rem; }
-
-.don-campo input[type="text"],
-.don-campo input[type="email"],
-.don-campo input[type="tel"],
-.don-campo input[type="number"],
-.don-campo select {
-    width: 100%;
-    padding: .65rem .7rem;
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    font: inherit;
-    color: var(--ink);
-    background: var(--white);
-}
-
-.don-campo--error input, .don-campo--error select { border-color: var(--coral); border-width: 2px; }
-
-.don-campo__error {
+.don-progreso {
     display: block;
-    margin-top: .3rem;
-    font-size: .89rem;
-    font-weight: 600;
-    color: color-mix(in srgb, var(--coral) 75%, var(--ink));
+    height: 7px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--navy) 10%, transparent);
 }
 
+.don-progreso__relleno {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--fondo-color, var(--teal)), var(--yellow));
+    transition: width .6s cubic-bezier(.22, .8, .3, 1);
+}
+
+.don-progreso__texto {
+    display: flex;
+    justify-content: space-between;
+    color: var(--muted);
+    font-size: .68rem;
+    font-weight: 700;
+}
+
+/* ── Campos ────────────────────────────────────────────────────────────── */
+
+.don-rejilla-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+.don-campo { display: flex; flex-direction: column; margin-bottom: 16px; gap: 6px; }
+
+.don-campo label,
+.don-campo legend {
+    padding: 0;
+    color: var(--navy);
+    font-size: .79rem;
+    font-weight: 700;
+}
+
+.don-campo__ayuda { color: var(--muted); font-size: .71rem; font-weight: 500; }
+
+.don-campo input,
+.don-campo select,
+.don-campo textarea {
+    width: 100%;
+    min-height: 46px;
+    padding: 0 14px;
+    border: 1.5px solid var(--line);
+    border-radius: 11px;
+    background: var(--white);
+    color: var(--ink);
+    font-family: inherit;
+    font-size: .88rem;
+    transition: border-color .16s ease, box-shadow .16s ease;
+}
+
+.don-campo select {
+    appearance: none;
+    padding-right: 38px;
+    /* Cheurón dibujado con gradientes: evita depender de una imagen externa. */
+    background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+                      linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+    background-position: calc(100% - 19px) center, calc(100% - 14px) center;
+    background-repeat: no-repeat;
+    background-size: 5px 5px, 5px 5px;
+}
+
+.don-campo input:focus,
+.don-campo select:focus,
+.don-campo textarea:focus {
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--blue) 17%, transparent);
+    outline: none;
+}
+
+.don-campo input::placeholder { color: color-mix(in srgb, var(--muted) 65%, transparent); }
+
+.don-campo__error { color: var(--coral); font-size: .73rem; font-weight: 700; }
 .don-campo__error:empty { display: none; }
 
-.don-casilla { display: flex; gap: .6rem; align-items: flex-start; margin-bottom: 1rem; }
-.don-casilla input { margin-top: .25rem; flex: none; width: 1.1rem; height: 1.1rem; }
-.don-casilla label { font-weight: 600; }
+.don-campo--error input,
+.don-campo--error select { border-color: var(--coral); }
 
-.don-rejilla-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0 1rem; }
+.don-campo--error input:focus,
+.don-campo--error select:focus {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--coral) 18%, transparent);
+}
 
-/* ── Montos sugeridos ────────────────────────────────────────────────────── */
+/* Fieldset del monto: sin el marco por defecto del navegador. */
+fieldset.don-campo { margin: 0 0 16px; padding: 0; border: 0; }
 
-.don-montos { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: .75rem; border: 0; padding: 0; }
+/* ── Montos sugeridos ──────────────────────────────────────────────────── */
+
+.don-montos { display: flex; flex-wrap: wrap; gap: 9px; }
 
 .don-monto {
-    border: 2px solid var(--line);
-    border-radius: 10px;
+    min-height: 44px;
+    padding: 0 18px;
+    border: 1.5px solid var(--line);
+    border-radius: 11px;
     background: var(--white);
-    padding: .55rem 1rem;
-    font: inherit;
-    font-weight: 700;
-    color: var(--ink);
+    color: var(--navy);
     cursor: pointer;
-}
-
-.don-monto[aria-pressed="true"] {
-    border-color: var(--teal);
-    background: color-mix(in srgb, var(--teal) 12%, var(--white));
-}
-
-/* ── Botones ─────────────────────────────────────────────────────────────── */
-
-.don-boton {
-    display: inline-block;
-    border: 1px solid transparent;
-    border-radius: 12px;
-    padding: .85rem 1.4rem;
-    font: inherit;
+    font-family: inherit;
+    font-size: .85rem;
     font-weight: 800;
-    cursor: pointer;
-    text-decoration: none;
-    background: var(--coral);
+    letter-spacing: -.02em;
+    transition: transform .15s ease, border-color .15s ease, background .15s ease, color .15s ease;
+}
+
+.don-monto:hover { border-color: var(--blue); transform: translateY(-2px); }
+
+.don-monto[aria-pressed='true'] {
+    border-color: transparent;
+    background: linear-gradient(135deg, var(--coral), color-mix(in srgb, var(--coral) 72%, var(--yellow)));
     color: var(--white);
+    box-shadow: 0 10px 22px color-mix(in srgb, var(--coral) 32%, transparent);
 }
 
-.don-boton:hover { background: color-mix(in srgb, var(--coral) 88%, var(--ink)); }
+/* ── Casillas ──────────────────────────────────────────────────────────── */
 
-.don-boton--secundario { background: var(--white); color: var(--ink); border-color: var(--line); }
-.don-boton[disabled] { opacity: .55; cursor: progress; }
-
-/* Hueco reservado para el botón de Yape/Plin de la fase 5. */
-.don-pagos { display: flex; flex-direction: column; gap: .6rem; }
-
-.don-pagos__pendiente {
-    border: 1px dashed var(--line);
-    border-radius: 12px;
-    padding: .7rem 1rem;
-    color: var(--muted);
-    font-size: .9rem;
-    text-align: center;
+.don-casilla {
+    display: grid;
+    grid-template-columns: 20px 1fr;
+    align-items: start;
+    margin-bottom: 13px;
+    gap: 11px;
 }
 
-/* ── Avisos ──────────────────────────────────────────────────────────────── */
+.don-casilla input {
+    width: 20px;
+    height: 20px;
+    margin: 1px 0 0;
+    accent-color: var(--coral);
+    cursor: pointer;
+}
+
+.don-casilla label { color: var(--ink); font-size: .82rem; font-weight: 600; cursor: pointer; }
+.don-casilla .don-campo__ayuda { display: block; margin-top: 2px; }
+
+/* ── Avisos ────────────────────────────────────────────────────────────── */
 
 .don-aviso {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 15px;
+    padding: 13px 15px;
     border: 1px solid var(--line);
-    border-radius: 12px;
-    padding: .9rem 1rem;
-    margin-bottom: 1rem;
-    background: var(--white);
-}
-
-.don-aviso--error {
-    background: color-mix(in srgb, var(--coral) 8%, var(--white));
-    border-color: color-mix(in srgb, var(--coral) 40%, var(--white));
-}
-
-.don-aviso--exito {
-    background: color-mix(in srgb, var(--teal) 10%, var(--white));
-    border-color: color-mix(in srgb, var(--teal) 40%, var(--white));
-}
-
-.don-aviso--atencion {
-    background: color-mix(in srgb, var(--yellow) 14%, var(--white));
-    border-color: color-mix(in srgb, var(--yellow) 50%, var(--white));
+    border-left: 3px solid var(--blue);
+    border-radius: 11px;
+    background: color-mix(in srgb, var(--blue) 5%, var(--white));
+    color: var(--ink);
+    font-size: .82rem;
+    line-height: 1.5;
 }
 
 .don-aviso:empty { display: none; }
+.don-aviso svg { width: 18px; flex: none; margin-top: 1px; }
+.don-aviso a { color: var(--blue); font-weight: 700; }
 
-/* ── Dashboard en vivo ───────────────────────────────────────────────────── */
+.don-aviso--error {
+    border-left-color: var(--coral);
+    background: color-mix(in srgb, var(--coral) 7%, var(--white));
+}
 
-.don-dashboard { padding: 2.5rem 0; background: var(--white); border-top: 1px solid var(--line); }
+.don-aviso--atencion {
+    border-left-color: var(--yellow);
+    background: color-mix(in srgb, var(--yellow) 10%, var(--white));
+}
 
-.don-totales { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+.don-aviso h2 { margin: 0 0 4px; font-size: 1rem; font-weight: 800; }
+.don-aviso p { margin: 0; }
 
-.don-cifra { font-size: clamp(1.7rem, 5vw, 2.6rem); font-weight: 800; letter-spacing: -.02em; line-height: 1.1; }
-.don-cifra small { display: block; font-size: .85rem; font-weight: 600; color: var(--muted); letter-spacing: 0; }
+/* ── Panel lateral: resumen y confianza ────────────────────────────────── */
 
-.don-feed { list-style: none; margin: 0; padding: 0; display: grid; gap: .5rem; }
+.don-aside { position: sticky; top: 78px; display: grid; gap: 16px; }
+
+.don-resumen {
+    padding: 20px;
+    border: 1px solid color-mix(in srgb, var(--white) 24%, transparent);
+    border-radius: 18px;
+    color: var(--white);
+    background: linear-gradient(145deg, var(--navy), var(--navy-deep));
+    box-shadow: 0 22px 48px color-mix(in srgb, var(--navy) 38%, transparent);
+}
+
+.don-resumen h2 {
+    margin: 10px 0 14px;
+    font-size: 1.16rem;
+    font-weight: 800;
+    letter-spacing: -.035em;
+}
+
+.don-resumen__linea {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    padding: 9px 0;
+    border-top: 1px solid color-mix(in srgb, var(--white) 13%, transparent);
+    font-size: .78rem;
+}
+
+.don-resumen__linea span { color: color-mix(in srgb, var(--white) 62%, transparent); }
+.don-resumen__linea strong { font-size: .92rem; font-weight: 800; text-align: right; }
+
+.don-resumen__total strong {
+    color: var(--yellow);
+    font-size: 1.5rem;
+    letter-spacing: -.04em;
+}
+
+.don-confianza { display: grid; gap: 11px; margin-top: 16px; }
+
+.don-confianza li {
+    display: grid;
+    grid-template-columns: 30px 1fr;
+    align-items: start;
+    gap: 10px;
+    color: color-mix(in srgb, var(--white) 72%, transparent);
+    font-size: .74rem;
+    line-height: 1.45;
+    list-style: none;
+}
+
+.don-confianza svg { width: 17px; color: var(--yellow); }
+
+.don-confianza span {
+    display: grid;
+    width: 30px;
+    height: 30px;
+    place-items: center;
+    border-radius: 9px;
+    background: color-mix(in srgb, var(--white) 10%, transparent);
+}
+
+.don-confianza strong { display: block; color: var(--white); font-weight: 800; }
+
+/* ── Bloque de pago ────────────────────────────────────────────────────── */
+
+.don-pagos { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--line); }
+
+.don-pagos .button { width: 100%; min-height: 52px; font-size: .92rem; }
+
+.don-pagos__medios {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-top: 13px;
+    color: var(--muted);
+    font-size: .69rem;
+    font-weight: 600;
+}
+
+.don-pagos__medios svg { width: 15px; }
+
+/* Hueco del segundo canal de pago (Yape/Plin). Se deja dibujado para que el
+   diseño ya contemple dos opciones y no haya que recolocar nada despues. */
+.don-pagos__pendiente {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    margin: 12px 0 0;
+    padding: 13px;
+    border: 1.5px dashed var(--line);
+    border-radius: 12px;
+    color: var(--muted);
+    font-size: .76rem;
+    font-weight: 600;
+}
+
+.don-pagos__pendiente svg { width: 17px; }
+
+/* ── Página de un fondo ────────────────────────────────────────────────── */
+
+.don-portada {
+    display: block;
+    width: 100%;
+    max-height: 340px;
+    margin-bottom: 20px;
+    border-radius: 18px;
+    box-shadow: var(--shadow);
+    object-fit: cover;
+}
+
+.don-prosa { line-height: 1.68; }
+.don-prosa .don-panel__titulo { margin-bottom: 12px; }
+
+.don-galeria {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 12px;
+    margin-top: 14px;
+}
+
+.don-galeria img {
+    display: block;
+    width: 100%;
+    height: 148px;
+    border-radius: 12px;
+    object-fit: cover;
+}
+
+.don-resumen__progreso { margin: 16px 0 4px; display: grid; gap: 7px; }
+.don-resumen__progreso .don-progreso { background: color-mix(in srgb, var(--white) 16%, transparent); }
+.don-resumen__progreso .don-progreso__texto { color: color-mix(in srgb, var(--white) 68%, transparent); }
+
+.don-resumen__boton { width: 100%; margin-top: 18px; }
+
+.don-resumen__cerrado {
+    margin: 16px 0 0;
+    color: color-mix(in srgb, var(--white) 72%, transparent);
+    font-size: .76rem;
+    line-height: 1.5;
+}
+
+/* ── Pantalla de resultado ─────────────────────────────────────────────── */
+
+.don-resultado {
+    max-width: 620px;
+    margin: 0 auto;
+    padding: 38px 32px 32px;
+    border: 1px solid color-mix(in srgb, var(--navy) 9%, transparent);
+    border-radius: 20px;
+    background: var(--white);
+    box-shadow: var(--shadow);
+    text-align: center;
+}
+
+.don-resultado__orbe {
+    display: grid;
+    width: 76px;
+    height: 76px;
+    margin: 0 auto 20px;
+    place-items: center;
+    border-radius: 50%;
+    color: var(--white);
+    background: linear-gradient(135deg, var(--blue), var(--navy));
+}
+
+.don-resultado__orbe svg { width: 34px; }
+
+.don-resultado h1 {
+    margin: 0 0 10px;
+    font-size: clamp(1.4rem, 2.6vw, 1.85rem);
+    font-weight: 800;
+    letter-spacing: -.04em;
+    line-height: 1.15;
+}
+
+.don-resultado p { margin: 0 auto; max-width: 46ch; color: var(--muted); font-size: .88rem; line-height: 1.6; }
+
+.don-resultado__acciones {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 11px;
+    margin-top: 24px;
+}
+
+.don-resultado__acciones[hidden] { display: none; }
+
+.don-resultado .don-campo__ayuda {
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+}
+
+/* La insignia de estado: el JavaScript emite la clase y el CSS decide el
+   color. Nunca al reves. */
+.estado {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 26px;
+    margin-bottom: 14px;
+    padding: 0 13px;
+    border-radius: 999px;
+    font-size: .68rem;
+    font-weight: 800;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.estado[hidden] { display: none; }
+
+.estado--aprobado { background: color-mix(in srgb, var(--teal) 15%, var(--white)); color: var(--teal); }
+.estado--rechazado { background: color-mix(in srgb, var(--coral) 13%, var(--white)); color: var(--coral); }
+.estado--en_proceso,
+.estado--pendiente { background: color-mix(in srgb, var(--yellow) 20%, var(--white)); color: color-mix(in srgb, var(--yellow) 72%, var(--ink)); }
+
+.don-resultado--aprobado .don-resultado__orbe { background: linear-gradient(135deg, var(--teal), color-mix(in srgb, var(--teal) 60%, var(--blue))); }
+.don-resultado--rechazado .don-resultado__orbe { background: linear-gradient(135deg, var(--coral), color-mix(in srgb, var(--coral) 65%, var(--yellow))); }
+.don-resultado--en_proceso .don-resultado__orbe { background: linear-gradient(135deg, var(--yellow), var(--coral)); }
+
+/* Latido mientras se espera la confirmacion. */
+.don-resultado--esperando .don-resultado__orbe { animation: don-latido 1.9s ease-in-out infinite; }
+
+@keyframes don-latido {
+    0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--blue) 35%, transparent); }
+    50% { box-shadow: 0 0 0 16px color-mix(in srgb, var(--blue) 0%, transparent); }
+}
+
+/* Secundario sobre fondo claro. El .button-outline de la portada esta pensado
+   para ir sobre el hero oscuro y aqui desapareceria. */
+.button-ghost {
+    border-color: var(--line);
+    background: var(--white);
+    color: var(--navy);
+}
+
+.button-ghost:hover { border-color: var(--blue); color: var(--blue); }
+
+/* ── Dashboard en vivo ─────────────────────────────────────────────────── */
+
+.don-dashboard { margin-top: 34px; }
+
+.don-dashboard__titulo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 16px;
+    font-size: 1.28rem;
+    font-weight: 800;
+    letter-spacing: -.04em;
+}
+
+.don-totales {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 14px;
+}
+
+.don-total {
+    display: grid;
+    grid-template-columns: 46px 1fr;
+    align-items: center;
+    gap: 13px;
+    padding: 16px 18px;
+    border: 1px solid color-mix(in srgb, var(--navy) 9%, transparent);
+    border-radius: 15px;
+    background: var(--white);
+    box-shadow: var(--shadow);
+}
+
+.don-total > span:first-child {
+    display: grid;
+    width: 46px;
+    height: 46px;
+    place-items: center;
+    border-radius: 50%;
+    color: var(--white);
+    background: linear-gradient(135deg, var(--blue), var(--navy));
+}
+
+.don-total svg { width: 21px; }
+.don-total strong { display: block; font-size: 1.42rem; font-weight: 800; letter-spacing: -.04em; line-height: 1.05; }
+.don-total p { margin: 3px 0 0; color: var(--blue); font-size: .71rem; font-weight: 600; }
+
+.don-feed {
+    margin: 16px 0 0;
+    padding: 8px 6px;
+    border: 1px solid color-mix(in srgb, var(--navy) 9%, transparent);
+    border-radius: 15px;
+    background: var(--white);
+    box-shadow: var(--shadow);
+    list-style: none;
+}
 
 .don-feed li {
     display: flex;
     justify-content: space-between;
-    gap: 1rem;
-    align-items: baseline;
-    padding: .6rem .8rem;
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    background: var(--white);
+    align-items: center;
+    gap: 12px;
+    padding: 11px 14px;
+    font-size: .82rem;
 }
 
-.don-feed__cuando { color: var(--muted); font-size: .85rem; }
-.don-feed__monto { font-weight: 800; white-space: nowrap; }
-.don-feed__vacio { color: var(--muted); }
+.don-feed li + li { border-top: 1px solid var(--line); }
+.don-feed strong { font-weight: 800; }
+.don-feed__cuando { color: var(--muted); font-size: .71rem; }
 
-/* ── Resultado del pago ──────────────────────────────────────────────────── */
+.don-feed__monto {
+    color: var(--teal);
+    font-size: .88rem;
+    font-weight: 800;
+    letter-spacing: -.02em;
+    white-space: nowrap;
+}
 
-.don-resultado { max-width: 44rem; margin: 0 auto; text-align: center; padding: 2rem 1rem 4rem; }
-.don-resultado h1 { font-size: clamp(1.5rem, 4vw, 2.2rem); margin: 0 0 .5rem; }
-.don-resultado p { color: var(--muted); margin: 0 0 1rem; }
-.don-resultado__acciones { display: flex; flex-wrap: wrap; gap: .6rem; justify-content: center; }
+.don-feed__vacio { justify-content: center; color: var(--muted); font-size: .8rem; }
 
-/* ── Móvil ───────────────────────────────────────────────────────────────── */
+/* ── Utilidades ────────────────────────────────────────────────────────── */
 
-@media (max-width: 420px) {
-    .don-contenedor { padding: 1rem .75rem 3rem; }
-    .don-paso { padding: 1rem .85rem; }
-    .don-boton, .don-boton--secundario { width: 100%; text-align: center; }
-    .don-monto { flex: 1 1 calc(50% - .5rem); }
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+/* ── Adaptación a pantallas pequeñas ───────────────────────────────────── */
+
+@media (max-width: 1000px) {
+    .don-layout { grid-template-columns: 1fr; }
+    /* El resumen sube al principio: en movil, saber cuanto vas a donar importa
+       mas que tenerlo fijo a un lado. */
+    .don-aside { position: static; order: -1; }
+}
+
+@media (max-width: 720px) {
+    .don-contenedor { padding-block: 22px 48px; }
+    .don-panel { padding: 18px 16px; }
+    .don-rejilla-2 { grid-template-columns: 1fr; gap: 0; }
+    .don-fondos { grid-template-columns: 1fr; }
+    .don-hero__inner { padding-block: 26px 30px; }
+    .don-resultado { padding: 30px 20px 26px; }
+}
+
+/* A 360 px todo tiene que seguir siendo usable: los montos ocupan dos
+   columnas y el panel pierde el margen lateral, no el contenido. */
+@media (max-width: 400px) {
+    .don-montos { display: grid; grid-template-columns: 1fr 1fr; }
+    .don-monto { padding: 0 10px; }
+    .don-panel__titulo { font-size: 1rem; }
+    .don-panel__ayuda { margin-left: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .don-progreso__relleno { transition: none; }
+    .don-progreso__relleno,
+    .don-fondo,
+    .don-monto { transition: none; }
+    .don-fondo:hover,
+    .don-monto:hover { transform: none; }
+    .don-resultado--esperando .don-resultado__orbe { animation: none; }
 }

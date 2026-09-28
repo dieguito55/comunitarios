@@ -27,6 +27,7 @@ final class FondoPublicoController extends Controller
         return view('publico.fondo', [
             'fondo' => $fondo->load('medios'),
             'metricas' => ($this->metricas)($fondo),
+            'simboloMoneda' => $fondo->simboloMoneda(),
         ]);
     }
 }

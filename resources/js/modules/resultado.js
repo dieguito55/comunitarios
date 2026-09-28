@@ -1,4 +1,5 @@
 import { almacen, enteroPositivo, enviarJson } from './api.js';
+import { pintarIconos } from './iconos.js';
 
 /**
  * Pantalla de vuelta del checkout. Es la SEGUNDA RED DE SEGURIDAD.
@@ -119,30 +120,42 @@ function pintar(panel, estado) {
             titulo: '¡Gracias por tu aporte!',
             cuerpo: 'Tu donación quedó confirmada. El comprobante del pago lo emite Mercado Pago y te lo envía por su cuenta.',
             clase: 'estado--aprobado',
+            icono: 'circle-check',
+            tono: 'aprobado',
         },
         en_proceso: {
             etiqueta: 'En proceso',
             titulo: 'Estamos confirmando tu pago',
             cuerpo: 'Mercado Pago todavía no nos confirmó la operación. Esta página se actualiza sola; no hace falta que hagas nada.',
             clase: 'estado--en_proceso',
+            icono: 'clock',
+            tono: 'en_proceso',
+            esperando: true,
         },
         pendiente: {
             etiqueta: 'Pendiente',
             titulo: 'Estamos confirmando tu pago',
             cuerpo: 'Mercado Pago todavía no nos confirmó la operación. Esta página se actualiza sola; no hace falta que hagas nada.',
             clase: 'estado--pendiente',
+            icono: 'clock',
+            tono: 'en_proceso',
+            esperando: true,
         },
         en_proceso_agotado: {
             etiqueta: 'En proceso',
             titulo: 'Tu pago sigue en revisión',
             cuerpo: 'Algunos medios de pago tardan en acreditarse. Mercado Pago te avisará en cuanto la operación termine de procesarse. No hace falta que vuelvas a donar: tu aporte se registra solo.',
             clase: 'estado--en_proceso',
+            icono: 'clock',
+            tono: 'en_proceso',
         },
         rechazado: {
             etiqueta: 'Rechazado',
             titulo: 'El pago no se completó',
             cuerpo: 'Mercado Pago rechazó la operación, normalmente por un problema con la tarjeta o con los datos. No se te cobró nada; puedes intentarlo otra vez.',
             clase: 'estado--rechazado',
+            icono: 'circle-x',
+            tono: 'rechazado',
         },
         sin_identificar: {
             etiqueta: '',
@@ -151,12 +164,16 @@ function pintar(panel, estado) {
                 ? `Si hiciste una donación y no la ves reflejada, escríbenos a ${contacto} y la revisamos.`
                 : 'Si hiciste una donación y no la ves reflejada, escríbenos y la revisamos.',
             clase: '',
+            icono: 'search',
+            tono: '',
         },
         sin_respuesta: {
             etiqueta: '',
             titulo: 'Estamos confirmando tu pago',
             cuerpo: 'No pudimos comprobarlo ahora mismo, pero tu donación no se ha perdido: se confirma sola en cuanto Mercado Pago nos comunique el resultado.',
             clase: '',
+            icono: 'clock',
+            tono: '',
         },
     };
 
@@ -180,5 +197,19 @@ function pintar(panel, estado) {
 
     if (acciones) {
         acciones.hidden = estado !== 'rechazado' && estado !== 'sin_identificar';
+    }
+
+    // El contenedor lleva el tono: el CSS decide de que color es el orbe.
+    // Aqui solo se emiten clases, nunca un color.
+    panel.className = ['don-resultado']
+        .concat(texto.tono ? [`don-resultado--${texto.tono}`] : [])
+        .concat(texto.esperando ? ['don-resultado--esperando'] : [])
+        .join(' ');
+
+    const orbe = panel.querySelector('[data-resultado-icono]');
+
+    if (orbe && texto.icono) {
+        orbe.innerHTML = `<i data-lucide="${texto.icono}"></i>`;
+        pintarIconos();
     }
 }

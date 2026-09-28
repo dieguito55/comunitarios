@@ -37,7 +37,17 @@ final class DonarController extends Controller
             'montosSugeridos' => (array) config('donaciones.montos_sugeridos', []),
             'montoMinimo' => (float) config('donaciones.monto_minimo_mp'),
             'montoMaximo' => (float) config('donaciones.monto_maximo'),
-            'moneda' => (string) config('mercadopago.currency', 'PEN'),
+            'moneda' => $moneda = (string) config('mercadopago.currency', 'PEN'),
+
+            // El simbolo, no el codigo ISO: en la pantalla se lee «S/ 50», no
+            // «PEN 50». Es el mismo que usa Intl.NumberFormat en el navegador,
+            // asi que el importe no cambia de forma al refrescarse.
+            'simboloMoneda' => match ($moneda) {
+                'PEN' => 'S/',
+                'USD' => '$',
+                'EUR' => '€',
+                default => $moneda,
+            },
         ]);
     }
 }
