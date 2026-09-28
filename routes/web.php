@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Publico\DonarController;
 use App\Http\Controllers\Publico\FondoPublicoController;
+use App\Http\Controllers\Publico\PortadaController;
 use App\Http\Controllers\Publico\ResultadoDonacionController;
 use Illuminate\Support\Facades\Route;
 
-Route::view('/', 'welcome')->name('home');
+// La portada necesita el fondo destacado para enseñar su recaudacion real.
+Route::get('/', PortadaController::class)->name('home');
 
 /*
 |--------------------------------------------------------------------------

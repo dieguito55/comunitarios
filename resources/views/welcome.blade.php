@@ -98,7 +98,7 @@
             ],
         ],
         ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @vite(['resources/css/app.css', 'resources/js/app.js', 'resources/js/publico.js'])
 </head>
 <body>
 <a class="skip-link" href="#contenido">Saltar al contenido</a>
@@ -142,18 +142,71 @@
                     <a class="button button-outline" href="#que-hacemos"><span class="play-mini"><i data-lucide="play"></i></span> Conoce Comunitarios</a>
                 </div>
             </div>
-            <article class="featured-card reveal">
-                <span class="pill pill-yellow">PROGRAMA DESTACADO</span>
-                <h2>Fondo Antonia</h2>
-                <p class="location"><i data-lucide="map-pin"></i> Puno, Perú</p>
-                <div class="fundraising-head"><span>Recaudado</span><strong>S/ 26,000</strong></div>
-                <div class="accent-rule" role="progressbar" aria-label="Avance de recaudación de Fondo Antonia" aria-valuemin="0" aria-valuemax="257000" aria-valuenow="26000"><span></span></div>
-                <div class="fundraising-meta"><span><b>10.1%</b> de avance</span><span>Meta <b>S/ 257,000</b></span></div>
-                <div class="featured-benefit"><i data-lucide="users-round"></i><span><strong>24 beneficiarios</strong> acompañados por el programa</span></div>
-                <div class="donation-trust"><i data-lucide="shield-check"></i><span><strong>Donación acompañada</strong>Te contactaremos por WhatsApp para orientarte.</span></div>
-                <a class="button button-coral full donation-button" href="https://wa.me/51958494125?text=Hola%20Comunitarios%2C%20quiero%20sumarme%20y%20donar%20al%20Fondo%20Antonia." target="_blank" rel="noopener noreferrer">Quiero donar <i data-lucide="heart-handshake"></i></a>
-                <a class="featured-program-link" href="#fondo-antonia">Conoce el programa <i data-lucide="arrow-right"></i></a>
-            </article>
+            {{--
+                TARJETA DEL PROGRAMA DESTACADO
+
+                Todas las cifras salen de la base de datos. Antes estaban
+                escritas aqui a mano —S/ 26.000 sobre una meta de S/ 257.000—
+                y no correspondian a ninguna donacion real.
+
+                `data-dashboard` y `data-fondo-slug` son los enganches que lee
+                resources/js/modules/dashboard.js: con ellos, el recaudado y el
+                numero de aportes se refrescan solos cada 30 segundos, sin
+                recargar la pagina.
+            --}}
+            @if ($fondoDestacado)
+                @php($avance = $fondoDestacado->porcentajeDeMeta())
+                <article class="featured-card reveal" data-dashboard>
+                    <span class="pill pill-yellow">PROGRAMA DESTACADO</span>
+                    <h2>{{ $fondoDestacado->nombre }}</h2>
+                    <p class="location"><i data-lucide="map-pin"></i> Puno, Perú</p>
+
+                    <div data-fondo-slug="{{ $fondoDestacado->slug }}">
+                        <div class="fundraising-head">
+                            <span>Recaudado</span>
+                            <strong data-fondo-recaudado>{{ $fondoDestacado->simboloMoneda() }} {{ number_format((float) $fondoDestacado->recaudado, 2) }}</strong>
+                        </div>
+
+                        {{-- Sin meta no hay barra. Un 0 % en la portada de una
+                             fundacion se lee como un fracaso, no como una
+                             campana que acaba de empezar. --}}
+                        @if ($avance !== null)
+                            <div class="accent-rule"
+                                 data-fondo-progreso
+                                 role="progressbar"
+                                 aria-label="Avance de recaudación de {{ $fondoDestacado->nombre }}"
+                                 aria-valuemin="0"
+                                 aria-valuemax="100"
+                                 aria-valuenow="{{ (int) $avance }}"><span data-fondo-progreso-relleno style="width: {{ $avance }}%"></span></div>
+                            <div class="fundraising-meta">
+                                <span><b>{{ $avance }}%</b> de avance</span>
+                                <span>Meta <b>{{ $fondoDestacado->simboloMoneda() }} {{ number_format((float) $fondoDestacado->meta, 0) }}</b></span>
+                            </div>
+                        @endif
+
+                        <div class="featured-benefit">
+                            <i data-lucide="users-round"></i>
+                            <span>
+                                @if ($fondoDestacado->donaciones_count > 0)
+                                    <strong><span data-fondo-donaciones>{{ $fondoDestacado->donaciones_count }}</span> aportes</strong> recibidos hasta ahora
+                                @else
+                                    <strong>Sé la primera persona</strong> en aportar a este fondo
+                                @endif
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="donation-trust"><i data-lucide="shield-check"></i><span><strong>Pago seguro con Mercado Pago</strong>Tarjeta de débito o crédito. El comprobante lo emite Mercado Pago.</span></div>
+
+                    @if ($fondoDestacado->aceptaDonaciones())
+                        <a class="button button-coral full donation-button" href="{{ route('donar.fondo', $fondoDestacado) }}">Quiero donar <i data-lucide="heart-handshake"></i></a>
+                    @else
+                        <a class="button button-coral full donation-button" href="{{ route('fondos.mostrar', $fondoDestacado) }}">Ver lo que se recaudó <i data-lucide="arrow-right"></i></a>
+                    @endif
+
+                    <a class="featured-program-link" href="#fondo-antonia">Conoce el programa <i data-lucide="arrow-right"></i></a>
+                </article>
+            @endif
         </div>
         <div class="floral floral-one" aria-hidden="true"></div>
     </section>

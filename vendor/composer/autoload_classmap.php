@@ -31,6 +31,7 @@ return array(
     'App\\Http\\Controllers\\Publico\\DashboardController' => $baseDir . '/app/Http/Controllers/Publico/DashboardController.php',
     'App\\Http\\Controllers\\Publico\\DonarController' => $baseDir . '/app/Http/Controllers/Publico/DonarController.php',
     'App\\Http\\Controllers\\Publico\\FondoPublicoController' => $baseDir . '/app/Http/Controllers/Publico/FondoPublicoController.php',
+    'App\\Http\\Controllers\\Publico\\PortadaController' => $baseDir . '/app/Http/Controllers/Publico/PortadaController.php',
     'App\\Http\\Controllers\\Publico\\ResultadoDonacionController' => $baseDir . '/app/Http/Controllers/Publico/ResultadoDonacionController.php',
     'App\\Http\\Controllers\\Webhooks\\WebhookMercadoPagoController' => $baseDir . '/app/Http/Controllers/Webhooks/WebhookMercadoPagoController.php',
     'App\\Http\\Middleware\\ValidarFirmaMercadoPago' => $baseDir . '/app/Http/Middleware/ValidarFirmaMercadoPago.php',

@@ -135,6 +135,24 @@ class Fondo extends Model
     }
 
     /**
+     * El simbolo con el que se enseña el dinero de este fondo.
+     *
+     * El navegador formatea con Intl.NumberFormat('es-PE'), que para PEN
+     * devuelve «S/». Si el servidor pintara el codigo ISO, la cifra cambiaria
+     * de formato sola en el primer refresco del contador. Una misma cantidad
+     * escrita de dos maneras en la misma pantalla parece un error de calculo.
+     */
+    public function simboloMoneda(): string
+    {
+        return match ($this->moneda) {
+            'PEN' => 'S/',
+            'USD' => '$',
+            'EUR' => '€',
+            default => (string) $this->moneda,
+        };
+    }
+
+    /**
      * Porcentaje de la meta, o null si el fondo no tiene meta pública. Devolver
      * null en vez de 0 es lo que permite a la vista ocultar la barra en lugar
      * de enseñar un progreso inventado.

@@ -77,7 +77,7 @@
                                 <span class="don-fondo__resumen">{{ $fondo->resumen }}</span>
 
                                 <span class="don-fondo__cifra" data-fondo-recaudado>
-                                    {{ $fondo->moneda }} {{ number_format((float) $fondo->recaudado, 2) }}
+                                    {{ $fondo->simboloMoneda() }} {{ number_format((float) $fondo->recaudado, 2) }}
                                     <small><span data-fondo-donaciones>{{ $fondo->donaciones_count }}</span> donaciones</small>
                                 </span>
 

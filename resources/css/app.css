@@ -141,7 +141,7 @@ svg { display: block; }
 .fundraising-head span { color: rgba(255,255,255,.66); font-size: .58rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
 .fundraising-head strong { color: #fff; font-size: 1.25rem; letter-spacing: -.045em; line-height: 1; }
 .accent-rule { height: 8px; margin: 9px 0 7px; overflow: hidden; border: 1px solid rgba(255,255,255,.08); border-radius: 99px; background: rgba(255,255,255,.13); }
-.accent-rule span { display: block; width: 10.1%; min-width: 10px; height: 100%; border-radius: inherit; background: linear-gradient(90deg,var(--yellow),#ffbe37); box-shadow: 0 0 13px rgba(255,195,59,.45); }
+.accent-rule span { display: block; width: 0; min-width: 10px; height: 100%; border-radius: inherit; background: linear-gradient(90deg,var(--yellow),#ffbe37); box-shadow: 0 0 13px rgba(255,195,59,.45); }
 .fundraising-meta { display: flex; justify-content: space-between; gap: 10px; color: rgba(255,255,255,.62); font-size: .51rem; }
 .fundraising-meta b { color: #fff; font-weight: 800; }
 .featured-benefit { display: flex; align-items: center; gap: 8px; margin: 11px 0; padding: 8px 9px; border: 1px solid rgba(255,255,255,.1); border-radius: 8px; background: rgba(255,255,255,.055); }

@@ -515,6 +515,7 @@ class ComposerStaticInit130653c340b3868b35568c94585de454
         'App\\Http\\Controllers\\Publico\\DashboardController' => __DIR__ . '/../..' . '/app/Http/Controllers/Publico/DashboardController.php',
         'App\\Http\\Controllers\\Publico\\DonarController' => __DIR__ . '/../..' . '/app/Http/Controllers/Publico/DonarController.php',
         'App\\Http\\Controllers\\Publico\\FondoPublicoController' => __DIR__ . '/../..' . '/app/Http/Controllers/Publico/FondoPublicoController.php',
+        'App\\Http\\Controllers\\Publico\\PortadaController' => __DIR__ . '/../..' . '/app/Http/Controllers/Publico/PortadaController.php',
         'App\\Http\\Controllers\\Publico\\ResultadoDonacionController' => __DIR__ . '/../..' . '/app/Http/Controllers/Publico/ResultadoDonacionController.php',
         'App\\Http\\Controllers\\Webhooks\\WebhookMercadoPagoController' => __DIR__ . '/../..' . '/app/Http/Controllers/Webhooks/WebhookMercadoPagoController.php',
         'App\\Http\\Middleware\\ValidarFirmaMercadoPago' => __DIR__ . '/../..' . '/app/Http/Middleware/ValidarFirmaMercadoPago.php',

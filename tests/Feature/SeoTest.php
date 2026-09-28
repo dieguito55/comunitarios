@@ -2,10 +2,14 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class SeoTest extends TestCase
 {
+    // La portada consulta el fondo destacado, asi que necesita esquema.
+    use RefreshDatabase;
+
     public function test_the_homepage_exposes_complete_search_metadata(): void
     {
         $response = $this->get('/');

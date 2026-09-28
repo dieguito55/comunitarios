@@ -348,6 +348,92 @@ final class SitioPublicoTest extends TestCase
             ->assertSee('ya no está recibiendo donaciones', false);
     }
 
+    // ── Portada ──────────────────────────────────────────────────────────────
+
+    /**
+     * La tarjeta de «Programa destacado» llevaba las cifras escritas a mano en
+     * la plantilla: S/ 26.000 recaudados sobre una meta de S/ 257.000, y un
+     * 10,1 % de avance que ademas vivia en el CSS. Ninguna correspondia a una
+     * donacion real.
+     */
+    public function test_la_portada_no_contiene_ninguna_de_las_cifras_inventadas(): void
+    {
+        $this->fondoDePrueba(['slug' => 'fundacion-antonia', 'nombre' => 'Fondo Antonia']);
+
+        $html = $this->html('/');
+
+        foreach (['26,000', '257,000', '10.1%', '24 beneficiarios'] as $inventada) {
+            $this->assertStringNotContainsString($inventada, $html, "Sigue incrustada la cifra «{$inventada}».");
+        }
+    }
+
+    /** El boton de donar lleva a la pasarela, no a WhatsApp. */
+    public function test_el_boton_de_la_portada_lleva_al_formulario_de_donacion(): void
+    {
+        $fondo = $this->fondoDePrueba(['slug' => 'fundacion-antonia']);
+
+        $html = $this->html('/');
+
+        $this->assertStringContainsString('href="'.route('donar.fondo', $fondo).'"', $html);
+
+        // El texto del boton ya no puede colgar de un enlace de WhatsApp.
+        $this->assertDoesNotMatchRegularExpression(
+            '/<a[^>]*wa\.me[^>]*>\s*Quiero donar/',
+            $html,
+            'El boton «Quiero donar» sigue apuntando a WhatsApp.'
+        );
+    }
+
+    /** Lo recaudado que se publica es lo que hay en la base. */
+    public function test_la_portada_muestra_el_recaudado_real_del_fondo_destacado(): void
+    {
+        $fondo = $this->fondoDePrueba(['slug' => 'fundacion-antonia']);
+
+        $this->assertStringContainsString('S/ 0.00', $this->html('/'));
+
+        $this->aprobar($this->donacionPendiente(['fondo_id' => $fondo->id]), 250.00);
+
+        $this->assertStringContainsString('S/ 250.00', $this->html('/'));
+    }
+
+    /** Sin meta no hay barra: un 0 % en portada se lee como un fracaso. */
+    public function test_sin_meta_la_portada_no_pinta_barra_de_progreso(): void
+    {
+        $this->fondoDePrueba(['slug' => 'fundacion-antonia', 'meta' => null]);
+
+        $html = $this->html('/');
+
+        $this->assertStringNotContainsString('data-fondo-progreso', $html);
+        $this->assertStringNotContainsString('de avance', $html);
+    }
+
+    public function test_con_meta_la_portada_pinta_el_avance_real(): void
+    {
+        $fondo = $this->fondoDePrueba(['slug' => 'fundacion-antonia', 'meta' => 1000]);
+        $this->aprobar($this->donacionPendiente(['fondo_id' => $fondo->id]), 250.00);
+
+        $html = $this->html('/');
+
+        $this->assertStringContainsString('data-fondo-progreso', $html);
+        $this->assertStringContainsString('width: 25%', $html);
+        $this->assertStringContainsString('<b>25%</b> de avance', $html);
+    }
+
+    /** Un fondo en borrador no puede salir anunciado en la portada. */
+    public function test_la_portada_no_destaca_un_fondo_en_borrador(): void
+    {
+        $this->fondoDePrueba([
+            'slug' => 'aun-no-publicado',
+            'nombre' => 'Fondo sin publicar',
+            'estado' => EstadoFondo::BORRADOR,
+        ]);
+
+        $html = $this->html('/');
+
+        $this->assertStringNotContainsString('Fondo sin publicar', $html);
+        $this->assertStringNotContainsString('PROGRAMA DESTACADO', $html);
+    }
+
     // ── AT-90: el feed ───────────────────────────────────────────────────────
 
     public function test_at90_el_feed_solo_trae_donaciones_que_cuentan(): void
