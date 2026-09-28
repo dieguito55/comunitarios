@@ -1,0 +1,51 @@
+---
+# =============================================================================
+# Despliegue automático de comunitarios.org en cPanel
+#
+# Lo ejecuta cPanel → Git™ Version Control → botón "Update from Remote" /
+# "Deploy HEAD Commit", cada vez que se despliega una versión nueva.
+#
+# ⚠️ ANTES DE USARLO HAY QUE CAMBIAR DOS COSAS:
+#
+#   1. USUARIO  → el nombre de tu cuenta de cPanel (el de la esquina superior
+#                 derecha del panel, o lo que devuelve `whoami` en Terminal).
+#                 Aparece una sola vez, en la línea del `export DP=`.
+#
+#   2. La ruta de PHP → la de abajo es la de EasyApache con PHP 8.2. Si tu
+#                 cuenta usa otra versión, averigua la buena en cPanel →
+#                 Terminal con:    which php
+#                 y sustituye /opt/cpanel/ea-php82/root/usr/bin/php por lo que
+#                 te devuelva. Con PHP 8.3 sería .../ea-php83/...
+#
+# El repositorio se clona en /home/USUARIO/comunitarios y el Document Root del
+# dominio apunta a /home/USUARIO/comunitarios/public, así que este despliegue
+# NO COPIA NADA: solo deja la aplicación lista.
+#
+# Lo que NO hace, porque el servidor no tiene las herramientas:
+#   - composer install  → vendor/ se sube comprimido a mano
+#   - npm run build     → public/build/ se sube comprimido a mano
+#
+# Si una tarea falla, cPanel aborta las siguientes y el sitio SE QUEDA EN
+# MANTENIMIENTO. Para levantarlo, en cPanel → Terminal:
+#   /opt/cpanel/ea-php82/root/usr/bin/php /home/USUARIO/comunitarios/artisan up
+# =============================================================================
+
+deployment:
+  tasks:
+    - export DP=/home/USUARIO/comunitarios
+
+    # Nadie ve una página a medio migrar.
+    - /opt/cpanel/ea-php82/root/usr/bin/php $DP/artisan down --render="errors::503"
+
+    # --force porque en producción migrate pide confirmación por teclado y aquí
+    # no hay nadie para dársela.
+    - /opt/cpanel/ea-php82/root/usr/bin/php $DP/artisan migrate --force
+
+    # config:clear ANTES de config:cache: si quedó una caché vieja de un .env
+    # anterior, config:cache la regeneraría a partir de valores ya obsoletos.
+    - /opt/cpanel/ea-php82/root/usr/bin/php $DP/artisan config:clear
+    - /opt/cpanel/ea-php82/root/usr/bin/php $DP/artisan config:cache
+    - /opt/cpanel/ea-php82/root/usr/bin/php $DP/artisan route:cache
+    - /opt/cpanel/ea-php82/root/usr/bin/php $DP/artisan view:cache
+
+    - /opt/cpanel/ea-php82/root/usr/bin/php $DP/artisan up

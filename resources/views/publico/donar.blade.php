@@ -144,7 +144,7 @@
                 <div class="don-rejilla-2">
                     <div class="don-campo" data-campo="correo">
                         <label for="donacion-correo">Correo electrónico</label>
-                        <span class="don-campo__ayuda" id="ayuda-correo">Aquí te llega el comprobante.</span>
+                        <span class="don-campo__ayuda" id="ayuda-correo">Mercado Pago te envía aquí su comprobante del pago.</span>
                         <input type="email" id="donacion-correo" name="correo"
                                autocomplete="email" maxlength="200" required
                                aria-describedby="ayuda-correo error-correo">

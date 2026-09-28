@@ -117,7 +117,7 @@ function pintar(panel, estado) {
         aprobado: {
             etiqueta: 'Aprobado',
             titulo: '¡Gracias por tu aporte!',
-            cuerpo: 'Tu donación quedó confirmada. Te llegará el comprobante de Mercado Pago al correo que registraste.',
+            cuerpo: 'Tu donación quedó confirmada. El comprobante del pago lo emite Mercado Pago y te lo envía por su cuenta.',
             clase: 'estado--aprobado',
         },
         en_proceso: {
@@ -135,7 +135,7 @@ function pintar(panel, estado) {
         en_proceso_agotado: {
             etiqueta: 'En proceso',
             titulo: 'Tu pago sigue en revisión',
-            cuerpo: 'Algunos medios de pago tardan en acreditarse. En cuanto Mercado Pago lo confirme, te avisamos por correo. No hace falta que vuelvas a donar.',
+            cuerpo: 'Algunos medios de pago tardan en acreditarse. Mercado Pago te avisará en cuanto la operación termine de procesarse. No hace falta que vuelvas a donar: tu aporte se registra solo.',
             clase: 'estado--en_proceso',
         },
         rechazado: {
@@ -155,7 +155,7 @@ function pintar(panel, estado) {
         sin_respuesta: {
             etiqueta: '',
             titulo: 'Estamos confirmando tu pago',
-            cuerpo: 'No pudimos comprobarlo ahora mismo, pero tu donación no se ha perdido: la confirmaremos automáticamente y te avisaremos por correo.',
+            cuerpo: 'No pudimos comprobarlo ahora mismo, pero tu donación no se ha perdido: se confirma sola en cuanto Mercado Pago nos comunique el resultado.',
             clase: '',
         },
     };

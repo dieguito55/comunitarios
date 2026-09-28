@@ -1,178 +1,291 @@
-# Despliegue en cPanel
+# Poner comunitarios.org en producción (cPanel)
 
-Guía paso a paso para poner comunitarios.org en producción. Está escrita para
-que la pueda seguir alguien que no programa: cada paso dice **qué hacer**, **qué
-deberías ver** y **qué hacer si sale mal**.
+Guía paso a paso. Está escrita para que la siga **alguien que no programa**:
+cada paso dice qué hacer, qué deberías ver y qué hacer si sale mal.
 
-Reserva una hora la primera vez. Ten a mano:
+Reserva **una hora y media** la primera vez. No hace falta saber programar, pero
+sí ir en orden: varios pasos dependen del anterior.
 
-- El acceso a cPanel (usuario y contraseña).
-- El archivo `database/sql/comunitarios-schema.sql` de este repositorio.
-- El archivo `.env.production.example` de este repositorio.
-- Las credenciales de producción de Mercado Pago.
+## Antes de empezar, ten a mano
+
+- Usuario y contraseña de **cPanel**.
+- Del repositorio: `database/sql/comunitarios-schema.sql` y
+  `.env.production.example`.
+- Los dos comprimidos que te pasa quien programa: **`vendor.zip`** y
+  **`build.zip`**.
+- Las **credenciales de producción de Mercado Pago** (las que empiezan por
+  `APP_USR-`).
+
+> **¿Por qué hay que subir dos zips?**
+> El servidor de Namecheap no trae Composer ni Node, que son las herramientas
+> que descargan las librerías del proyecto y compilan los estilos. Así que esas
+> dos carpetas se generan en el ordenador de quien programa y se suben ya
+> hechas. No es un apaño: es lo normal en hosting compartido.
+
+En toda la guía verás **`USUARIO`**. Sustitúyelo siempre por el nombre de tu
+cuenta de cPanel: lo ves arriba a la derecha del panel, o escribiendo `whoami`
+en cPanel → Terminal.
 
 ---
 
-## 1. Preparar PHP
+## 1. Elegir la versión de PHP y activar las extensiones
 
 cPanel → **Select PHP Version**.
 
-1. Elige **PHP 8.3** (mínimo 8.2).
-2. En la pestaña de extensiones, marca: `curl`, `mbstring`, `openssl`,
-   `pdo_mysql`, `fileinfo`, `zip`, `intl`.
-3. Guarda.
+1. Elige **PHP 8.3** (o **8.2**; las dos valen, 8.3 va algo más rápido).
+2. En la pestaña **Extensions**, asegúrate de que estas están marcadas:
 
-> Si falta `intl`, algunas pantallas de administración fallan al formatear
-> números. Si falta `curl`, no se puede hablar con Mercado Pago.
+| Extensión | Para qué |
+|---|---|
+| `pdo_mysql` | Hablar con la base de datos |
+| `mbstring` | Nombres con tildes y ñ |
+| `openssl` | HTTPS y el cifrado de las sesiones |
+| `curl` | Llamar a la API de Mercado Pago |
+| `fileinfo` | **Obligatoria.** El panel comprueba el tipo real de cada imagen leyendo su contenido. Sin esto, subir una portada falla siempre |
+| `json`, `tokenizer`, `xml`, `dom`, `ctype`, `filter`, `hash`, `session` | Las exige Laravel |
+| `zip` | Descomprimir, si lo haces por consola |
+
+3. Pulsa **Save**.
+
+**Comprobar:** arriba debe poner `PHP 8.3` (o `8.2`) como *Current PHP version*.
+
+> Anota la ruta del PHP de esa versión, la vas a necesitar. En cPanel →
+> **Terminal**, escribe `which php`. Normalmente es
+> `/opt/cpanel/ea-php83/root/usr/bin/php`.
 
 ---
 
-## 2. Subir el proyecto y apuntar el DocumentRoot
+## 2. Crear la base de datos
 
-**Esto es lo que más se equivoca, y es lo que más daño hace.**
+cPanel → **MySQL® Database Wizard**. Son tres pantallas.
 
-El proyecto NO se sube a `public_html`. Se sube a una carpeta hermana, y
-`public_html` apunta a la subcarpeta `public/` del proyecto:
+1. **Nombre de la base**: escribe `comunitarios`.
+   cPanel le pone delante el prefijo de tu cuenta, así que quedará
+   `USUARIO_comunitarios`. **Anota el nombre completo.**
+2. **Usuario y contraseña**: crea un usuario, por ejemplo `comuweb`, y pulsa el
+   botón **Password Generator**. **Copia la contraseña a un sitio seguro ahora**:
+   después no se puede volver a ver.
+3. **Privilegios**: marca **ALL PRIVILEGES** y pulsa *Make Changes*.
+
+Al terminar tienes que tener anotados **tres valores**:
 
 ```
-/home/USUARIO/
-├── comunitarios_app/          ← todo el proyecto va aquí
-│   ├── app/  bootstrap/  config/  database/  resources/  routes/  storage/  vendor/
-│   ├── public/               ← solo ESTO debe ser accesible por web
-│   └── .env
-└── public_html/              ← apunta a comunitarios_app/public
+DB_DATABASE = USUARIO_comunitarios
+DB_USERNAME = USUARIO_comuweb
+DB_PASSWORD = (la que generaste)
 ```
 
-Si `public_html` apunta a la raíz del proyecto, **cualquiera puede descargar tu
-`.env` con las credenciales de Mercado Pago escribiendo la URL**. No es una
-exageración: es el fallo más común en hosting compartido.
-
-Formas de hacerlo bien, de mejor a peor:
-
-1. **Document Root del dominio** (cPanel → *Domains* → *Manage*): cámbialo a
-   `/home/USUARIO/comunitarios_app/public`. Es lo limpio.
-2. Si el hosting no te deja cambiarlo, borra `public_html` y créalo como enlace
-   simbólico:
-   `ln -s /home/USUARIO/comunitarios_app/public /home/USUARIO/public_html`
-
-**Cómo comprobar que está bien:** abre `https://comunitarios.org/.env` en el
-navegador. Debe dar **404**. Si te descarga un archivo, para todo y arregla esto
-antes de seguir.
-
 ---
 
-## 3. Crear la base de datos
+## 3. Importar el esquema de la base
 
-cPanel → **MySQL® Databases**.
+cPanel → **phpMyAdmin**.
 
-1. *Create New Database*: `comunitarios`.
-   cPanel le pondrá delante el prefijo de tu cuenta: quedará
-   `USUARIO_comunitarios`. **Apunta el nombre completo.**
-2. *Add New User*: crea un usuario dedicado con una contraseña larga generada
-   por cPanel. **Apúntala.**
-3. *Add User To Database*: añade el usuario a la base con **ALL PRIVILEGES**.
+1. En la columna izquierda, pulsa sobre **`USUARIO_comunitarios`**.
+   Verás *No tables found in database* — correcto, está vacía.
+2. Pestaña **Importar** (*Import*).
+3. **Seleccionar archivo** → elige `database/sql/comunitarios-schema.sql`.
+4. Deja el juego de caracteres en **utf-8** y pulsa **Continuar**.
 
----
+**Qué deberías ver:** una barra verde,
+*«La importación se ejecutó exitosamente»*, y en la izquierda aparecen
+**14 tablas más una vista** (`v_fondos_conciliacion`, con otro icono).
 
-## 4. Importar el esquema
-
-cPanel → **phpMyAdmin** → selecciona `USUARIO_comunitarios` en la izquierda →
-pestaña **Importar** → elige `database/sql/comunitarios-schema.sql` → **Continuar**.
-
-Deberías ver *"La importación se ejecutó correctamente"* y, en la izquierda,
-**15 objetos**: 14 tablas más la vista `v_fondos_conciliacion`.
-
-Comprueba en la pestaña **SQL**:
+**Comprobar que entró bien.** Pestaña **SQL**, pega esto y ejecuta:
 
 ```sql
-SELECT COUNT(*) FROM migrations;   -- debe dar 14
-SELECT slug, nombre, estado FROM fondos;   -- debe dar fundacion-antonia
-SELECT COUNT(*) FROM admin_users;  -- debe dar 0
+SELECT COUNT(*) AS migraciones FROM migrations;
+SELECT slug, estado FROM fondos;
 ```
 
-Que `admin_users` esté vacío es correcto y buscado: el archivo no trae ningún
-usuario ni ninguna contraseña. El administrador se crea en el paso 8.
+Debe responder `14` y una fila, `fundacion-antonia | activo`.
 
-**Si el import falla:**
+**Si falla:**
 
-| Error | Causa | Solución |
-|---|---|---|
-| `access denied; you need SUPER privileges` | El `.sql` traía un `DEFINER` | Este archivo ya viene sin él. Si lo regeneraste tú, quítalo (ver §11) |
-| `Unknown database` | Elegiste la base equivocada | Selecciónala en la izquierda antes de importar |
-| `Table already exists` | La base no estaba vacía | Bórrala y créala de nuevo |
-
----
-
-## 5. Subir el `.env` y protegerlo
-
-1. Copia `.env.production.example` a tu ordenador y renómbralo a `.env`.
-2. Rellénalo. Los tres valores de base de datos son los del paso 3
-   (`DB_DATABASE` lleva el prefijo del usuario). `APP_KEY` se deja **vacío**:
-   se genera en el paso 6.
-3. Súbelo a `/home/USUARIO/comunitarios_app/.env` (la raíz del proyecto, **no**
-   dentro de `public/`).
-4. cPanel → *File Manager* → clic derecho sobre `.env` → *Change Permissions* →
-   pon **600** (solo lectura y escritura para el dueño).
+| Mensaje | Qué pasa |
+|---|---|
+| *#1227 access denied; you need SUPER privileges* | El `.sql` que te pasaron lleva un `DEFINER`. Pide el archivo regenerado: el bueno no lo lleva |
+| *#1050 Table already exists* | La base no estaba vacía. Bórrala y créala otra vez (paso 2) |
+| *El archivo es demasiado grande* | Comprime el `.sql` en `.zip` y sube el zip: phpMyAdmin lo acepta |
 
 ---
 
-## 6. Generar la clave de la aplicación
+## 4. Traer el código con Git Version Control
 
-cPanel → **Terminal** (o por SSH):
+cPanel → **Git™ Version Control** → **Create**.
 
-```bash
-cd ~/comunitarios_app
-php artisan key:generate --force
+1. Activa **Clone a Repository**.
+2. **Clone URL**: la del repositorio.
+3. **Repository Path**: `/home/USUARIO/comunitarios`
+
+> ⚠️ **Fuera de `public_html`.** Ese `comunitarios` va colgando directamente de
+> tu carpeta personal, NO dentro de `public_html`. Si lo clonas dentro,
+> cualquiera podría descargarse el archivo de contraseñas escribiendo la URL.
+> Más adelante (paso 9) apuntaremos el dominio a la subcarpeta correcta.
+
+4. **Create**.
+
+**Comprobar:** en **File Manager** existe `/home/USUARIO/comunitarios` y dentro
+hay carpetas como `app`, `config`, `public`, `routes`.
+
+---
+
+## 5. Subir y extraer `vendor.zip` y `build.zip`
+
+cPanel → **File Manager**, entra en `/home/USUARIO/comunitarios`.
+
+1. Botón **Upload** → sube **`vendor.zip`**.
+2. Vuelve a la carpeta, clic derecho sobre `vendor.zip` → **Extract**.
+   La ruta de destino tiene que ser `/home/USUARIO/comunitarios`.
+3. Repite con **`build.zip`**, que se extrae dentro de `public/`.
+   Destino: `/home/USUARIO/comunitarios/public`.
+4. **Borra los dos `.zip`** cuando termines.
+
+**Comprobar** que existen exactamente estos dos archivos:
+
+```
+/home/USUARIO/comunitarios/vendor/autoload.php
+/home/USUARIO/comunitarios/public/build/manifest.json
 ```
 
-Debe responder `Application key set successfully`.
-
-> **Nunca copies el `APP_KEY` de tu equipo local.** Cifra sesiones y datos: si
-> se comparte entre entornos, una sesión de desarrollo vale en producción.
+Si alguno no está, la extracción se hizo en el sitio equivocado: lo más típico
+es que quede `vendor/vendor/autoload.php`. Mueve la carpeta a su sitio.
 
 ---
 
-## 7. Cachear configuración y rutas
+## 6. Crear el archivo `.env`
+
+Este archivo guarda las contraseñas. Es el más delicado de todos.
+
+1. File Manager → entra en `/home/USUARIO/comunitarios`.
+2. Arriba a la derecha, **Settings** → marca **Show Hidden Files (dotfiles)** →
+   *Save*. Sin esto no verás los archivos que empiezan por punto.
+3. **+ File** → nómbralo exactamente **`.env`** → *Create New File*.
+4. Clic derecho sobre `.env` → **Edit** → *Edit* otra vez si avisa de la
+   codificación.
+5. Abre `.env.production.example` del repositorio, **copia todo su contenido** y
+   pégalo en el editor.
+6. Rellena los huecos marcados con `← rellenar`:
+
+| Clave | Qué poner |
+|---|---|
+| `APP_KEY` | Déjala vacía, la generamos en el paso 7 |
+| `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` | Los tres valores del paso 2 |
+| `MP_ACCESS_TOKEN`, `MP_PUBLIC_KEY` | Credenciales **de producción** de Mercado Pago (`APP_USR-…`) |
+| `MP_WEBHOOK_SECRET` | Lo tendrás en el paso 11. De momento, vacío |
+| `MAIL_USERNAME`, `MAIL_PASSWORD` | Los de la cuenta de correo, si ya existe |
+| `CAMPANA_META` | La meta de recaudación, si tesorería ya la decidió. Vacía si no |
+
+7. **Save Changes**.
+8. Clic derecho sobre `.env` → **Permissions** → escribe **600** → *Change
+   Permissions*.
+
+> **600 significa**: solo tu cuenta puede leer este archivo. Es lo que impide
+> que otro cliente del mismo servidor compartido lo abra.
+
+---
+
+## 7. Generar la clave de la aplicación (`APP_KEY`)
+
+Esta clave cifra las sesiones. **Tiene que ser nueva y única de este servidor**;
+no se copia de ningún sitio.
+
+### Si tienes Terminal en cPanel (lo más fácil)
+
+cPanel → **Terminal**:
 
 ```bash
-cd ~/comunitarios_app
-php artisan config:cache
-php artisan route:cache
+cd /home/USUARIO/comunitarios
+/opt/cpanel/ea-php83/root/usr/bin/php artisan key:generate --force
 ```
 
-**Repite estos dos comandos cada vez que cambies el `.env`.** Con la
-configuración cacheada, editar el `.env` no tiene ningún efecto hasta que se
-regenera la caché. Es la causa número uno de "he cambiado la credencial y sigue
-fallando".
+Debe responder `INFO  Application key set successfully.`
+
+### Si tu plan no tiene Terminal
+
+cPanel → **Git™ Version Control** → tu repositorio → pestaña **Pull or Deploy**.
+Ese botón ejecuta las tareas del archivo `.cpanel.yml`, y ahí ya hay comandos
+como este. Pídele a quien programa que añada **temporalmente** la línea
+`key:generate --force`, pulsa *Deploy HEAD Commit*, y que la quite después.
+
+**Nunca** subas un archivo PHP a `public/` para generar la clave: mientras esté
+ahí, cualquiera puede abrirlo.
+
+**Comprobar:** abre el `.env` y mira que `APP_KEY=` ahora tenga un valor largo
+que empieza por `base64:`.
 
 ---
 
-## 8. Crear el primer administrador
+## 8. Dar permisos de escritura
+
+cPanel → Terminal:
 
 ```bash
-cd ~/comunitarios_app
-php artisan make:superadmin
+cd /home/USUARIO/comunitarios
+chmod -R 775 storage bootstrap/cache
+
+# Comprobantes del canal QR: FUERA de public/, nadie los ve por URL.
+mkdir -p storage/app/private/comprobantes
+chmod 775 storage/app/private/comprobantes
+
+# Portadas de los fondos que se suben desde el panel: estas SÍ se ven.
+mkdir -p public/uploads/fondos
+chmod 775 public/uploads/fondos
+```
+
+Sin Terminal: en File Manager, clic derecho sobre cada carpeta →
+**Permissions** → `775` → marca **Recurse into subdirectories**.
+
+**Comprobar que el servidor puede escribir:**
+
+```bash
+touch public/uploads/fondos/prueba.txt && rm public/uploads/fondos/prueba.txt && echo "escritura OK"
+```
+
+Si dice *Permission denied*, el dueño de la carpeta no es tu usuario:
+`chown -R $(whoami) storage public/uploads bootstrap/cache`.
+
+---
+
+## 9. Apuntar el dominio a la carpeta correcta
+
+cPanel → **Domains** → en la fila de `comunitarios.org`, **Manage**.
+
+En **Document Root**, escribe:
+
+```
+/home/USUARIO/comunitarios/public
+```
+
+⚠️ Con **`/public` al final**. Es el paso que más se falla. Si apuntas el
+dominio a `/home/USUARIO/comunitarios` a secas, el archivo de contraseñas queda
+publicado en internet.
+
+Marca también **Force HTTPS Redirect** y guarda.
+
+**Comprobar:** abre `https://comunitarios.org`. Debe cargar la portada.
+Si ves un error 500, ve al paso 14.
+
+---
+
+## 10. Crear el primer administrador
+
+El panel no tiene registro abierto: sin este paso nadie puede entrar.
+
+cPanel → Terminal:
+
+```bash
+cd /home/USUARIO/comunitarios
+/opt/cpanel/ea-php83/root/usr/bin/php artisan make:superadmin
 ```
 
 Te pedirá usuario y contraseña (mínimo 12 caracteres; no se ve al escribirla).
 
-> La contraseña no está en ningún archivo del repositorio ni en el `.sql`. Si se
-> pierde, se crea otro usuario con este mismo comando.
+> La contraseña **no está** en el repositorio ni en el `.sql`, a propósito. Si
+> se pierde, se crea otro usuario con este mismo comando.
 
-**Este primer usuario hay que crearlo por consola sí o sí**: el panel no tiene
-registro abierto, y sin ningún administrador nadie puede entrar. A partir de
-ahí, los demás se crean desde el propio panel.
-
-### Entrar al panel
-
-Una vez creado, el panel está en:
-
-```
-https://comunitarios.org/admin
-```
-
-Entrando con ese usuario se puede crear un fondo, subirle imágenes, publicarlo y
-ver cuánto lleva recaudado, sin volver a tocar la consola.
+Entra en `https://comunitarios.org/admin`. Desde ahí ya se crean los demás
+administradores sin volver a la consola.
 
 ### Los dos roles
 
@@ -181,153 +294,241 @@ ver cuánto lleva recaudado, sin volver a tocar la consola.
 | **Superadministrador** | Todo: crear y borrar fondos, publicarlos, elegir el preseleccionado y gestionar administradores |
 | **Editor** | Solo editar textos e imágenes de fondos que ya existen |
 
-Un editor **no** puede publicar un fondo ni decidir cuál sale preseleccionado.
-Es deliberado: publicar un fondo es decidir que la organización va a pedir
-dinero para algo, y esa es una decisión de la organización, no de quien redacta.
-
-> Publicar un fondo pide escribir su nombre exacto para confirmarlo. No es un
-> capricho: es el momento en que ese fondo empieza a recibir dinero real.
+Un editor **no** puede publicar un fondo. Es deliberado: publicar es decidir que
+la organización va a pedir dinero para algo, y esa decisión no es de quien
+redacta. Por eso publicar pide escribir el nombre exacto del fondo para
+confirmarlo.
 
 ---
 
-## 9. Permisos de escritura
+## 11. Registrar el webhook en Mercado Pago
 
-```bash
-cd ~/comunitarios_app
-chmod -R 755 storage bootstrap/cache
-mkdir -p storage/app/private/comprobantes
-chmod 755 storage/app/private/comprobantes
+El webhook es la llamada que Mercado Pago le hace al sitio cuando un pago se
+aprueba. Sin él, las donaciones tardarían en confirmarse.
 
-# Imágenes de los fondos que se suben desde el panel.
-mkdir -p public/uploads/fondos
-chmod 755 public/uploads/fondos
-```
-
-`storage/` guarda registros, caché y sesiones. `storage/app/private/comprobantes`
-guardará las capturas de Yape/Plin cuando exista el canal QR: está **fuera** de
-`public/` a propósito, para que nadie pueda ver el comprobante bancario de un
-donante escribiendo una URL.
-
-`public/uploads/fondos` es justo lo contrario: ahí van las portadas y galerías
-de los fondos, que **sí** tienen que verse. Escribe directamente dentro de
-`public/` para no depender de `php artisan storage:link`, que en hosting
-compartido a veces no se puede crear — y si falta, ninguna imagen del panel se
-vería.
-
-**Comprobar que el servidor puede escribir ahí:**
-
-```bash
-touch public/uploads/fondos/prueba.txt && rm public/uploads/fondos/prueba.txt && echo "escritura OK"
-```
-
-Si da *Permission denied*, el usuario de PHP no es el dueño de la carpeta:
-`chown -R $(whoami) public/uploads`.
-
-**Comprobar:** `https://comunitarios.org/` debe cargar la portada. Si ves un
-error 500, mira `storage/logs/laravel.log`.
-
----
-
-## 10. Registrar el webhook en Mercado Pago
-
-1. https://www.mercadopago.com.pe/developers → **Tus integraciones** → tu
-   aplicación → **Webhooks**, en modo **Producción**.
+1. Entra en <https://www.mercadopago.com.pe/developers> → **Tus integraciones**
+   → tu aplicación → **Webhooks**, en modo **Producción**.
 2. URL: `https://comunitarios.org/api/webhooks/mercadopago`
-3. Eventos: **Pagos**. Opcionalmente **Órdenes comerciales**.
-4. Guardar. Copia la **clave secreta** que muestra y ponla en `MP_WEBHOOK_SECRET`
-   del `.env`.
-5. Vuelve a ejecutar `php artisan config:cache`.
+3. Eventos: marca **Pagos**. Opcionalmente, *Órdenes comerciales*.
+4. Guarda. Mercado Pago te muestra una **clave secreta**: cópiala en
+   `MP_WEBHOOK_SECRET` del `.env`.
+5. Vuelve a cachear la configuración:
+   ```bash
+   cd /home/USUARIO/comunitarios
+   /opt/cpanel/ea-php83/root/usr/bin/php artisan config:cache
+   ```
 
+> La clave secreta **solo se ve una vez**. Si la pierdes, hay que regenerar el
+> webhook y volver a copiarla.
+>
 > Sin `MP_WEBHOOK_SECRET` y con `APP_ENV=production`, el sistema **rechaza todas
-> las notificaciones con un 401** a propósito: es preferible que Mercado Pago
-> reintente a aceptar notificaciones sin firmar.
+> las notificaciones con un 401**, a propósito: es preferible que Mercado Pago
+> reintente a aceptar avisos sin firmar que cualquiera podría falsificar.
 
-Detalle completo del webhook y su diagnóstico: [runbook-webhook.md](runbook-webhook.md).
-
----
-
-## 11. Verificar que funciona
-
-En este orden:
-
-| # | Qué | Cómo | Esperado |
-|---|---|---|---|
-| 1 | El `.env` no es público | Abrir `https://comunitarios.org/.env` | **404** |
-| 2 | La portada carga | Abrir `https://comunitarios.org/` | La página, sin errores |
-| 3 | El certificado | Mirar el candado del navegador | Válido, sin avisos |
-| 4 | La base responde | `php artisan db:show` | Conecta y lista las tablas |
-| 5 | Los contadores cuadran | `php artisan fondos:recalcular --dry-run` | *Todos los contadores cuadran* |
-| 6 | El panel abre | `https://comunitarios.org/admin` | Formulario de acceso; entra con el usuario del paso 8 |
-| 7 | Se puede publicar un fondo | Crear uno desde el panel y publicarlo | Queda `activo` y aparece en el formulario de donación |
-| 8 | Una donación real | Donar S/ 5 de verdad y pagar | Queda `aprobado`, el contador del fondo sube |
-
-La comprobación 6 es la única que prueba el circuito completo. Hazla con dinero
-real y poco importe antes de anunciar la campaña.
+Diagnóstico detallado del webhook: [runbook-webhook.md](runbook-webhook.md).
 
 ---
 
-## 12. Si algo sale mal: volver atrás
+## 12. Programar la tarea automática
 
-El despliegue automático guarda las tres últimas versiones en
-`~/comunitarios_app/releases/`. Para volver a la anterior:
+cPanel → **Cron Jobs**. En *Add New Cron Job*:
 
-```bash
-cd ~/comunitarios_app
-ls -t releases/            # la primera es la actual
-ln -sfn "$PWD/releases/<SHA_ANTERIOR>" current-next
-mv -Tf current-next current
-cd current && php artisan optimize:clear && php artisan optimize
+- **Common Settings**: *Once Per Minute*, o a mano: `* * * * *`
+- **Command**:
+
+```
+/opt/cpanel/ea-php83/root/usr/bin/php /home/USUARIO/comunitarios/artisan schedule:run >> /dev/null 2>&1
 ```
 
-**La base de datos no vuelve atrás sola.** Si el problema fue una migración,
-haz primero una copia y estudia si conviene revertirla:
+**Add New Cron Job**.
+
+> **Se ejecuta cada minuto, pero casi siempre no hace nada.** Así funciona el
+> programador de Laravel: se despierta, mira si toca alguna tarea y se va. Hoy
+> solo hay una tarea, a las 3:30 de la madrugada, que compara los contadores de
+> cada fondo con las donaciones reales y **anota** las diferencias en
+> `storage/logs/conciliacion.log`. No corrige nada por su cuenta: si los números
+> se descuadraran, arreglarlos automáticamente cada noche escondería el motivo.
+
+---
+
+## 13. Comprobaciones finales
+
+Hazlas todas antes de anunciar el sitio.
+
+| # | Qué probar | Qué debe pasar |
+|---|---|---|
+| 1 | `https://comunitarios.org` | Carga la portada, con estilos |
+| 2 | `https://comunitarios.org/donar` | Se ven los fondos y el formulario |
+| 3 | `https://comunitarios.org/api/dashboard` | Devuelve datos en formato JSON |
+| 4 | **`https://comunitarios.org/.env`** | **Error 404.** Si descarga un archivo, PARA TODO: vuelve al paso 9, el Document Root está mal, y cambia inmediatamente todas las contraseñas y las credenciales de Mercado Pago |
+| 5 | `https://comunitarios.org/admin` | Pide usuario y contraseña |
+| 6 | Candado del navegador | HTTPS, sin avisos |
+| 7 | Una donación real de S/ 5 con tu propia tarjeta | Llegas al checkout, pagas, y vuelves a una pantalla que confirma. El fondo suma S/ 5 en el panel |
+
+> La prueba 7 es la única que demuestra que todo el circuito funciona. **Hazla
+> con tu tarjeta y luego devuélvete el dinero desde el panel de Mercado Pago.**
+> Cinco soles son más baratos que descubrir el fallo con la donación de otra
+> persona.
+
+Comprueba también que `https://comunitarios.org/api/dashboard` **no** muestra
+correos, documentos ni teléfonos. Solo nombres abreviados tipo «María P.» o
+«Donante anónimo».
+
+---
+
+## 14. Si sale un error 500
+
+Un 500 es «algo falló y no te voy a decir qué». Es correcto que no lo diga en
+público. El motivo está en el registro:
 
 ```bash
-mysqldump -u USUARIO -p USUARIO_comunitarios > ~/backup-antes-de-revertir.sql
+tail -n 50 /home/USUARIO/comunitarios/storage/logs/laravel.log
 ```
+
+Sin Terminal: File Manager → `storage/logs` → clic derecho sobre el archivo →
+**View**.
+
+**Las tres causas, por orden de frecuencia:**
+
+**1. Falta la `APP_KEY`** · *No application encryption key has been specified*
+→ Te saltaste el paso 7. Genérala y vuelve a cachear:
+```bash
+php artisan key:generate --force && php artisan config:cache
+```
+
+**2. Permisos** · *failed to open stream: Permission denied* o *The stream or
+file … could not be opened*
+→ Laravel no puede escribir en `storage`. Repite el paso 8.
+
+**3. Caché de configuración vieja** · *Access denied for user* o *Unknown
+database*, aunque los datos del `.env` sean correctos
+→ Cambiaste el `.env` después de cachear. La caché manda sobre el archivo:
+```bash
+php artisan config:clear && php artisan config:cache
+```
+
+> **Nunca pongas `APP_DEBUG=true` para ver el error.** Esa pantalla muestra el
+> contenido del `.env` —incluidas las credenciales de Mercado Pago— a cualquiera
+> que provoque el fallo. El registro dice lo mismo, en privado.
+
+Si no es ninguna de las tres, copia las últimas 50 líneas del registro y pásalas
+a quien programa. La línea que importa es la primera, no la lista larga de
+después.
+
+---
+
+## 15. Volver atrás si algo sale mal
+
+**Si el sitio se queda en «En mantenimiento»**, porque un despliegue falló a
+medias:
+
+```bash
+cd /home/USUARIO/comunitarios
+/opt/cpanel/ea-php83/root/usr/bin/php artisan up
+```
+
+**Si la versión nueva está rota y quieres la anterior:**
+
+```bash
+cd /home/USUARIO/comunitarios
+git log --oneline -5          # anota el código de la versión que sí funcionaba
+git checkout <codigo>
+php artisan config:clear && php artisan config:cache && php artisan up
+```
+
+`vendor/` y `public/build/` no cambian al volver atrás, así que no hay que
+volver a subir los zips salvo que la versión rota trajera librerías nuevas.
+
+**Si el problema está en la base de datos**, restaura la copia:
+phpMyAdmin → selecciona la base → **Importar** → el `.sql` de la copia.
+
+> ⚠️ Restaurar una copia **borra las donaciones registradas desde que se hizo**.
+> Antes de restaurar, exporta la tabla `donaciones` por separado para no perder
+> ningún aporte real.
 
 ### Copias de seguridad
 
-Programa esto en cPanel → *Cron Jobs*, a diario:
+Antes de cada despliegue, y como mínimo una vez por semana:
 
-```bash
-mysqldump -u USUARIO -p'CLAVE' USUARIO_comunitarios | gzip > ~/backups/db-$(date +\%F).sql.gz
-find ~/backups -name '*.gz' -mtime +30 -delete
-```
+cPanel → **Backup Wizard** → *Back Up* → *MySQL Databases* → descarga el `.sql`.
 
-> Un backup que nunca se restauró no es un backup. Prueba la restauración
-> completa en local al menos una vez antes de lanzar la campaña.
+Guarda esa copia **fuera del servidor**. Una copia que vive en el mismo sitio
+que el original no es una copia de seguridad.
 
 ---
 
-## 13. Regenerar el `.sql` en el futuro
+# Pasar de sandbox a producción
 
-Cuando haya migraciones nuevas y quieras rehacer el esquema:
+Cuando el sitio se probó con las credenciales de prueba y llega el momento de
+cobrar de verdad, se tocan **siete claves** del `.env`. No hay que cambiar nada
+del código.
+
+| # | Clave | En pruebas | En producción |
+|---|---|---|---|
+| 1 | `MP_ENV` | `sandbox` | `production` |
+| 2 | `MP_ACCESS_TOKEN` | `TEST-…` | `APP_USR-…` |
+| 3 | `MP_PUBLIC_KEY` | `TEST-…` | `APP_USR-…` |
+| 4 | `MP_WEBHOOK_SECRET` | la del webhook de prueba | **la del webhook de producción** |
+| 5 | `MP_USE_SANDBOX_INIT_POINT` | `true` | `false` |
+| 6 | `MP_SANDBOX_PAYER_EMAIL` | el correo de un usuario de prueba | **vacío** |
+| 7 | `MP_WEBHOOK_URL` | la URL de pruebas | `https://comunitarios.org/api/webhooks/mercadopago` |
+
+**Después de cambiarlas, siempre:**
 
 ```bash
-php artisan migrate                      # en local, primero
+cd /home/USUARIO/comunitarios
+/opt/cpanel/ea-php83/root/usr/bin/php artisan config:clear
+/opt/cpanel/ea-php83/root/usr/bin/php artisan config:cache
+```
+
+Sin esto, el sitio sigue cobrando con las credenciales viejas: manda la caché,
+no el archivo.
+
+### Las cuatro trampas de este cambio
+
+**El `MP_WEBHOOK_SECRET` es distinto por aplicación.** No es «la clave de tu
+cuenta»: Mercado Pago genera una por cada webhook que registras. La de sandbox
+**no vale** en producción. Si la dejas puesta, todas las notificaciones reales
+se rechazan con un 401 y las donaciones se quedan en «pendiente» hasta que
+alguien lo mira.
+
+**`MP_SANDBOX_PAYER_EMAIL` tiene que quedar vacío.** Si sobrevive del entorno de
+pruebas, sustituye el correo real del donante por el de un usuario de prueba, y
+el comprobante de Mercado Pago se va a un buzón que nadie lee.
+
+**No mezcles credenciales.** Las dos, `MP_ACCESS_TOKEN` y `MP_PUBLIC_KEY`, de la
+misma aplicación y del mismo tipo. Una de producción con otra de pruebas produce
+un «Algo salió mal» en el checkout que no explica nada.
+
+**Vuelve a registrar el webhook en modo Producción.** El panel de Mercado Pago
+tiene dos modos y el webhook de pruebas no se copia solo. Repite el paso 11 con
+el selector en *Producción*.
+
+---
+
+## Para quien programa: regenerar el `.sql` más adelante
+
+Cuando haya migraciones nuevas, el esquema se vuelve a generar desde una base
+local ya migrada:
+
+```bash
 mysqldump --no-data --routines --skip-comments --single-transaction \
-          -u root comunitarios > database/sql/comunitarios-schema.sql
+          --no-tablespaces --default-character-set=utf8mb4 comunitarios
 ```
 
-Y **edítalo siempre** para:
+Y sobre esa salida hay que:
 
-1. Quitar cualquier `CREATE DATABASE` o `USE`: en cPanel la base ya existe con
-   otro nombre.
-2. **Quitar el `DEFINER=` de la vista `v_fondos_conciliacion`** y dejar
-   `SQL SECURITY INVOKER`. El usuario `root@localhost` del volcado no existe en
-   el hosting y el import falla con *"you need SUPER privileges"*. Este es el
-   paso que más despliegues rompe.
-3. Añadir al final los `INSERT` de la tabla `migrations`, para que Laravel no
-   intente correr otra vez lo que el archivo acaba de crear.
-4. Añadir el `INSERT` del fondo inicial.
-5. **No incluir ningún usuario administrador ni ningún hash de contraseña.**
+1. Quitar **todo `DEFINER=`** y dejar la vista con `SQL SECURITY INVOKER`.
+   En hosting compartido el usuario del volcado no existe y el import falla con
+   *access denied; you need SUPER privileges*.
+2. Quitar los `AUTO_INCREMENT=<n>` heredados, para que una instalación nueva
+   empiece a contar en 1.
+3. Quitar cualquier `CREATE DATABASE` o `USE`: en cPanel la base ya existe y se
+   llama distinto.
+4. Añadir los `INSERT` de la tabla `migrations` con **todas** las aplicadas. Sin
+   ellos, `php artisan migrate` intenta crear tablas que ya existen y se cae.
+5. Añadir el `INSERT` del fondo inicial, con los contadores a cero.
+6. **No incluir ningún administrador ni ningún hash de contraseña.**
 
-Antes de darlo por bueno, pruébalo importándolo en una base vacía:
-
-```bash
-mysql -u root -e "CREATE DATABASE prueba_import"
-mysql -u root prueba_import < database/sql/comunitarios-schema.sql
-mysql -u root prueba_import -e "SELECT COUNT(*) FROM migrations; SELECT COUNT(*) FROM admin_users;"
-mysql -u root -e "DROP DATABASE prueba_import"
-```
+Y luego **probarlo de verdad**: importarlo en una base vacía y comprobar que
+`php artisan migrate --pretend` responde *Nothing to migrate*.

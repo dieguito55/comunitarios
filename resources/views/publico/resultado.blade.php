@@ -54,16 +54,16 @@
         <p data-resultado-cuerpo>
             @switch($estadoProvisional)
                 @case('aprobado')
-                    Volviste del pago correctamente. Estamos verificándolo con Mercado Pago;
-                    en cuanto se confirme, te llega el comprobante por correo.
+                    Volviste del pago correctamente. Estamos verificándolo con Mercado Pago.
+                    El comprobante del pago lo emite y lo envía Mercado Pago.
                     @break
                 @case('rechazado')
                     Mercado Pago rechazó la operación, normalmente por un problema con la tarjeta
                     o con los datos. No se te cobró nada; puedes intentarlo otra vez.
                     @break
                 @case('en_proceso')
-                    Algunos medios de pago tardan en acreditarse. En cuanto Mercado Pago lo
-                    confirme, te avisamos por correo. No hace falta que vuelvas a donar.
+                    Algunos medios de pago tardan en acreditarse. Mercado Pago te avisará en
+                    cuanto la operación termine de procesarse. No hace falta que vuelvas a donar.
                     @break
                 @default
                     Estamos comprobando el estado de tu operación con Mercado Pago.

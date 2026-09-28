@@ -41,9 +41,11 @@ MP_WEBHOOK_URL=https://a1b2-c3d4.ngrok-free.app/api/webhooks/mercadopago
 
 # Las tres DEBEN ser HTTPS. Con HTTP, la regla dura 3 hace que no se envíe
 # auto_return y Mercado Pago rechaza la preferencia con un 400.
-MP_BACK_URL_SUCCESS=https://a1b2-c3d4.ngrok-free.app/donaciones
-MP_BACK_URL_FAILURE=https://a1b2-c3d4.ngrok-free.app/donaciones
-MP_BACK_URL_PENDING=https://a1b2-c3d4.ngrok-free.app/donaciones
+# El parametro se llama `donacion`, no `estado`: es el que lee
+# ResultadoDonacionController para pintar el mensaje provisional.
+MP_BACK_URL_SUCCESS=https://a1b2-c3d4.ngrok-free.app/donacion/resultado?donacion=exitosa
+MP_BACK_URL_FAILURE=https://a1b2-c3d4.ngrok-free.app/donacion/resultado?donacion=fallida
+MP_BACK_URL_PENDING=https://a1b2-c3d4.ngrok-free.app/donacion/resultado?donacion=pendiente
 
 MP_SANDBOX_PAYER_EMAIL=test_user_XXXXX@testuser.com
 ```
