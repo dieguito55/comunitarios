@@ -19,7 +19,14 @@ use Illuminate\Validation\Rule;
  * TODA validación relevante ocurre aquí. La del navegador existe solo para que
  * el donante no tenga que esperar al servidor para ver un error de tecleo.
  */
-final class CrearDonacionRequest extends FormRequest
+/*
+ * No es `final` a proposito: CrearDonacionQrRequest la extiende para reutilizar
+ * la validacion del donante —nombre, documento, correo, fondo, terminos— y solo
+ * cambiar lo que de verdad difiere entre canales: el minimo del monto y los
+ * campos del comprobante. Duplicar estas 150 lineas seria garantizar que dentro
+ * de unos meses los dos canales validen distinto al mismo donante.
+ */
+class CrearDonacionRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -222,6 +229,14 @@ final class CrearDonacionRequest extends FormRequest
             'success' => false,
             'error' => $mensajes[0] ?? 'Datos inválidos.',
             'errores' => $mensajes,
+
+            // Por campo, para que el formulario pueda marcar EL campo que falla
+            // en vez de solo enseñar un aviso arriba. El navegador ya sabía
+            // leer esta clave; hasta ahora no se enviaba nunca.
+            'campos' => array_map(
+                static fn (array $mensajesDelCampo): string => (string) ($mensajesDelCampo[0] ?? ''),
+                $validator->errors()->toArray(),
+            ),
         ], 422));
     }
 }

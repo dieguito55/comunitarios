@@ -39,8 +39,16 @@ return [
     */
     'campana_meta' => is_numeric(env('CAMPANA_META')) ? (float) env('CAMPANA_META') : null,
 
-    /* Ruta pública de la imagen del QR estático de la organización. */
-    'qr_imagen' => env('QR_YAPE_IMAGEN', ''),
+    /*
+    | Ruta pública de la imagen del QR estático de la organización.
+    |
+    | El valor por defecto apunta al archivo que viaja en el propio repositorio
+    | (`public/qr/qr.jpeg`), no a una cadena vacía: así el canal funciona en
+    | cualquier instalación recién clonada. La variable de entorno existe para
+    | poder cambiarlo sin desplegar, por ejemplo si la organización renueva su
+    | QR o lo sirve desde otro sitio.
+    */
+    'qr_imagen' => env('QR_YAPE_IMAGEN', '/qr/qr.jpeg'),
 
     /*
     | Comprobantes del canal QR. Deuda técnica 5: viven en un disco PRIVADO y

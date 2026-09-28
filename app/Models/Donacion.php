@@ -61,6 +61,7 @@ class Donacion extends Model
         'registrado_por',
         'verificado_por',
         'verificado_at',
+        'motivo_rechazo',
         'ip_origen',
     ];
 

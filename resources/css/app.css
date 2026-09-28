@@ -1261,77 +1261,223 @@ fieldset.don-campo { margin: 0 0 var(--espacio-5); padding: 0; border: 0; }
 
 .don-pagos__medios svg { width: 16px; color: var(--teal-texto); }
 
-/* ── Canal QR (Yape / Plin) ────────────────────────────────────────────────
-   El canal NO está implementado: solo existen los enums en PHP. Esto es el
-   aviso, y está diseñado como una funcionalidad anunciada, no como una caja
-   suelta al final del formulario. */
+/* ── Selector de canal de pago ─────────────────────────────────────────────
+   Dos formas de pagar con consecuencias muy distintas: tarjeta se confirma
+   sola, Yape/Plin lo verifica una persona. La tarjeta de cada canal dice esa
+   diferencia en su propia etiqueta, porque elegir mal significa esperar un día
+   sin saber por qué. */
 
-.don-proximamente {
+.don-canales {
     display: grid;
-    align-items: center;
-    gap: var(--espacio-4);
-    margin-top: var(--espacio-4);
-    padding: var(--espacio-5);
-    border: 2px dashed color-mix(in srgb, var(--blue) 28%, var(--line));
-    border-radius: var(--radio-lg);
-    background: var(--blue-tenue);
-    grid-template-columns: 44px minmax(0, 1fr);
+    gap: var(--espacio-3);
+    margin-bottom: var(--espacio-5);
+    grid-template-columns: minmax(0, 1fr);
 }
 
-.don-proximamente__icono {
+.don-canal {
     display: grid;
-    width: 44px;
-    height: 44px;
-    place-items: center;
+    align-items: center;
+    gap: var(--espacio-3);
+    min-height: 64px;
+    padding: var(--espacio-3) var(--espacio-4);
+    border: 2px solid var(--borde-control);
     border-radius: var(--radio-md);
     background: var(--superficie);
-    box-shadow: var(--sombra-sm);
-    color: var(--blue);
-}
-
-.don-proximamente__icono svg { width: 22px; }
-
-.don-proximamente strong {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--espacio-2);
     color: var(--ink);
-    font-size: var(--texto-base);
-    font-weight: 800;
+    cursor: pointer;
+    font-family: inherit;
+    grid-template-columns: 24px minmax(0, 1fr);
+    text-align: left;
+    transition:
+        border-color var(--transicion-rapida) var(--curva),
+        background var(--transicion-rapida) var(--curva),
+        box-shadow var(--transicion-rapida) var(--curva);
 }
 
-.don-proximamente p {
-    margin: var(--espacio-1) 0 0;
+.don-canal svg { width: 22px; color: var(--muted); }
+.don-canal strong { display: block; font-size: var(--texto-base); font-weight: 800; }
+
+.don-canal span span,
+.don-canal > span {
     color: var(--muted);
     font-size: var(--texto-sm);
     line-height: var(--alto-medio);
 }
 
-.don-proximamente .pill {
-    background: var(--yellow);
-    color: var(--navy-deep);
-    font-size: var(--texto-xs);
+.don-canal:hover { border-color: var(--blue); }
+.don-canal:focus-visible { box-shadow: var(--foco-anillo); outline: none; }
+
+.don-canal[aria-pressed='true'] {
+    border-color: var(--navy);
+    background: var(--blue-tenue);
+    box-shadow: var(--sombra-sm);
 }
 
-/*
-   ESQUELETO DEL CANAL QR — sin marcado que lo use todavía.
+.don-canal[aria-pressed='true'] svg { color: var(--navy); }
 
-   Cuando se implemente el pago con Yape/Plin (otro encargo), estas son las
-   clases previstas para que el diseño ya esté decidido y no haya que
-   improvisarlo con prisa el día que llegue:
+/* ── Canal QR (Yape / Plin) ────────────────────────────────────────────────
+   El canal manual: se transfiere fuera de aquí y se sube la constancia. Nada
+   de esto confirma un pago — lo confirma una persona en el panel. */
 
-   .don-qr               Contenedor del canal, hermano de .don-pagos.
-   .don-qr__imagen       El QR estático de la organización, cuadrado, con
-                         borde --borde y radio --radio-lg. Nunca por debajo de
-                         220 px: un QR pequeño no se escanea.
-   .don-qr__pasos        Lista ordenada de instrucciones (escanea, paga,
-                         adjunta), con el mismo tratamiento que .don-confianza
-                         pero sobre fondo claro.
-   .don-qr__comprobante  Zona de subida del comprobante: recuadro discontinuo,
-                         estado de arrastre, vista previa y botón de quitar.
-                         El archivo va a disco privado, nunca a public/.
-*/
+.don-qr[hidden] { display: none; }
+
+.don-qr__pasos {
+    display: grid;
+    gap: var(--espacio-5);
+    margin: 0 0 var(--espacio-5);
+    padding: 0;
+    counter-reset: paso;
+    list-style: none;
+}
+
+.don-qr__pasos > li {
+    display: grid;
+    gap: var(--espacio-2);
+    padding: var(--espacio-4);
+    border: var(--borde);
+    border-radius: var(--radio-md);
+    background: var(--superficie-hundida);
+}
+
+.don-qr__pasos strong { font-size: var(--texto-base); font-weight: 800; }
+
+.don-qr__pasos > li > span {
+    color: var(--muted);
+    font-size: var(--texto-sm);
+    line-height: var(--alto-medio);
+}
+
+/* Mínimo 260 px de lado: por debajo de eso, escanear el código desde otro
+   teléfono deja de funcionar de forma fiable. */
+.don-qr__imagen {
+    display: block;
+    width: min(300px, 100%);
+    min-width: 260px;
+    aspect-ratio: 1;
+    margin: var(--espacio-2) auto 0;
+    padding: var(--espacio-3);
+    border: var(--borde);
+    border-radius: var(--radio-lg);
+    background: var(--white);
+    box-shadow: var(--sombra-sm);
+    object-fit: contain;
+}
+
+.don-qr__monto {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--espacio-3);
+    margin-top: var(--espacio-2);
+}
+
+.don-qr__monto strong {
+    flex: 1;
+    min-width: 0;
+    padding: var(--espacio-3) var(--espacio-4);
+    border: 2px dashed var(--borde-control);
+    border-radius: var(--radio-md);
+    background: var(--superficie);
+    color: var(--navy);
+    font-size: var(--texto-2xl);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: var(--traqueo-titulo);
+}
+
+.don-qr__medios { display: flex; flex-wrap: wrap; gap: var(--espacio-3); margin-top: var(--espacio-2); }
+
+.don-qr__medios .don-monto {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--espacio-2);
+    min-height: 48px;
+}
+
+.don-qr__medios input { accent-color: var(--coral); width: 20px; height: 20px; }
+
+/* ── Subida del comprobante ────────────────────────────────────────────── */
+
+.don-qr__comprobante {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--espacio-3);
+    min-height: 92px;
+    padding: var(--espacio-4);
+    border: 2px dashed var(--borde-control);
+    border-radius: var(--radio-md);
+    background: var(--superficie);
+    color: var(--muted);
+    cursor: pointer;
+    font-size: var(--texto-sm);
+    font-weight: 600;
+    text-align: center;
+    transition:
+        border-color var(--transicion-rapida) var(--curva),
+        background var(--transicion-rapida) var(--curva);
+}
+
+.don-qr__comprobante:hover { border-color: var(--blue); background: var(--blue-tenue); }
+.don-qr__comprobante svg { width: 22px; flex: none; color: var(--blue); }
+
+/* El input existe y es tabulable; solo se oculta a la vista, porque el control
+   nativo de archivos no se puede estilar de forma fiable. */
+.don-qr__comprobante input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+}
+
+.don-qr__comprobante:focus-within {
+    border-color: var(--blue);
+    box-shadow: var(--foco-anillo);
+}
+
+.don-qr__previa {
+    margin: var(--espacio-3) 0 0;
+    padding: var(--espacio-3);
+    border: var(--borde);
+    border-radius: var(--radio-md);
+    background: var(--superficie);
+}
+
+.don-qr__previa[hidden] { display: none; }
+
+.don-qr__previa img {
+    display: block;
+    width: 100%;
+    max-height: 260px;
+    border-radius: var(--radio-sm);
+    object-fit: contain;
+}
+
+.don-qr__previa figcaption {
+    margin-top: var(--espacio-2);
+    color: var(--muted);
+    font-size: var(--texto-xs);
+    text-align: center;
+    word-break: break-all;
+}
+
+/* El aviso honesto: aquí nadie confirma nada. */
+.don-qr__aviso {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--espacio-3);
+    margin: 0 0 var(--espacio-5);
+    padding: var(--espacio-4);
+    border-left: 3px solid var(--yellow);
+    border-radius: var(--radio-md);
+    background: var(--yellow-tenue);
+    color: var(--ink);
+    font-size: var(--texto-sm);
+    line-height: var(--alto-medio);
+}
+
+.don-qr__aviso svg { width: 20px; flex: none; color: var(--yellow-texto); }
+
+.don-qr .button { width: 100%; min-height: 56px; border-radius: var(--radio-md); }
 
 /* ── Barra inferior en móvil ───────────────────────────────────────────────
    El resumen de escritorio no cabe en el móvil, y dejarlo arriba obliga a
@@ -1888,6 +2034,7 @@ fieldset.don-campo { margin: 0 0 var(--espacio-5); padding: 0; border: 0; }
 
 @media (min-width: 480px) {
     .don-rejilla-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .don-canales { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .don-totales { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 

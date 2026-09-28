@@ -7,6 +7,7 @@ namespace App\Services\Donaciones;
 use App\Enums\EstadoDonacion;
 use App\Models\Donacion;
 use App\Models\Fondo;
+use App\Services\Fondos\MoverContadoresFondo;
 use App\Services\MercadoPago\MapearEstadoMp;
 use DateTimeInterface;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -42,7 +43,10 @@ final class ReconciliarDonacion
     /** @var list<string> */
     private const ORIGENES = ['webhook', 'reconciliacion', 'auditoria'];
 
-    public function __construct(private readonly MapearEstadoMp $mapearEstado) {}
+    public function __construct(
+        private readonly MapearEstadoMp $mapearEstado,
+        private readonly MoverContadoresFondo $moverContadores,
+    ) {}
 
     /**
      * @param  array<string, mixed>  $pagoMp  Salida de ConsultarPago o BuscarPagosPorReferencia
@@ -143,7 +147,7 @@ final class ReconciliarDonacion
 
             // Los contadores del fondo, en ESTA misma transacción. Si algo
             // falla después, el dinero y su contador se van juntos.
-            $movimiento = $this->moverContadoresDelFondo($donacion, $estadoAnterior, $donacion->estado);
+            $movimiento = ($this->moverContadores)($donacion, $estadoAnterior, $donacion->estado);
 
             Log::channel('payments')->info('Donación reconciliada', [
                 'origen' => $origen,
@@ -160,74 +164,6 @@ final class ReconciliarDonacion
 
             return ResultadoReconciliacion::actualizado($donacion, $estadoAnterior, $donacion->estado);
         });
-    }
-
-    /**
-     * Mueve `recaudado` y `donaciones_count` del fondo según el cambio de
-     * estado. Devuelve el importe movido, para dejarlo en el registro.
-     *
-     * El control es EL CAMBIO DE ESTADO, no la llegada de la notificación: por
-     * eso una notificación repetida no suma dos veces, aunque MP la reenvíe
-     * veinte veces. `hayAlgoQueEscribir()`, más arriba, ya cortó antes de
-     * llegar aquí cuando no había nada nuevo.
-     *
-     * El contador puede BAJAR: un contracargo o una devolución convierten un
-     * `aprobado` en `rechazado`, y es correcto que el dinero deje de contarse.
-     */
-    private function moverContadoresDelFondo(
-        Donacion $donacion,
-        EstadoDonacion $estadoAnterior,
-        EstadoDonacion $estadoNuevo,
-    ): float {
-        $contabaAntes = $estadoAnterior === EstadoDonacion::APROBADO;
-        $cuentaAhora = $estadoNuevo === EstadoDonacion::APROBADO;
-
-        if ($contabaAntes === $cuentaAhora || $donacion->fondo_id === null) {
-            return 0.0;
-        }
-
-        // lockForUpdate: dos pagos que se aprueban a la vez sobre el mismo
-        // fondo leerían el mismo contador y uno de los dos se perdería.
-        $fondo = Fondo::query()->lockForUpdate()->find($donacion->fondo_id);
-
-        if ($fondo === null) {
-            Log::channel('payments')->error('La donación apunta a un fondo inexistente', [
-                'donacion_id' => $donacion->id,
-                'fondo_id' => $donacion->fondo_id,
-            ]);
-
-            return 0.0;
-        }
-
-        $importe = round($donacion->montoEfectivo(), 2);
-        $signo = $cuentaAhora ? 1 : -1;
-
-        $cuentaCalculada = (int) $fondo->donaciones_count + $signo;
-        $recaudadoCalculado = round((float) $fondo->recaudado + ($signo * $importe), 2);
-
-        // Nunca se guarda un negativo, pero un cálculo negativo SIGNIFICA que
-        // hay un bug: se está restando una donación que nunca se sumó. Sin este
-        // registro, max(0, ...) lo taparía y nadie se enteraría jamás.
-        if ($cuentaCalculada < 0 || $recaudadoCalculado < 0) {
-            Log::channel('payments')->error('El contador del fondo intentó bajar de cero; hay un desajuste contable', [
-                'fondo_id' => $fondo->id,
-                'fondo_slug' => $fondo->slug,
-                'donacion_id' => $donacion->id,
-                'recaudado_actual' => (float) $fondo->recaudado,
-                'recaudado_calculado' => $recaudadoCalculado,
-                'donaciones_count_actual' => (int) $fondo->donaciones_count,
-                'donaciones_count_calculado' => $cuentaCalculada,
-                'importe' => $signo * $importe,
-                'revisar_con' => 'php artisan fondos:recalcular --dry-run',
-            ]);
-        }
-
-        $fondo->forceFill([
-            'recaudado' => max(0.0, $recaudadoCalculado),
-            'donaciones_count' => max(0, $cuentaCalculada),
-        ])->save();
-
-        return $signo * $importe;
     }
 
     /**

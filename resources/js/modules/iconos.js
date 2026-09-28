@@ -6,6 +6,7 @@ import {
     CircleCheck,
     CircleX,
     Clock,
+    Copy,
     CreditCard,
     createIcons,
     Eye,
@@ -20,6 +21,7 @@ import {
     Smartphone,
     Target,
     TrendingUp,
+    Upload,
     UsersRound,
 } from 'lucide';
 
@@ -43,6 +45,7 @@ const ICONOS = {
     CircleCheck,
     CircleX,
     Clock,
+    Copy,
     CreditCard,
     Eye,
     HandCoins,
@@ -56,6 +59,7 @@ const ICONOS = {
     Smartphone,
     Target,
     TrendingUp,
+    Upload,
     UsersRound,
 };
 

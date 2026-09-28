@@ -76,6 +76,19 @@ final class SitioPublicoTest extends TestCase
         return (string) preg_replace('/\s+/', ' ', (string) $this->get($url)->assertOk()->getContent());
     }
 
+    /**
+     * Cuántos radios de FONDO vienen marcados.
+     *
+     * Antes se contaba la palabra «checked» en todo el HTML, y funcionó
+     * mientras el único radio marcado del formulario fue el del fondo. Con el
+     * canal QR apareció un segundo grupo —Yape/Plin, con Yape marcado por
+     * defecto— y la cuenta dejó de significar lo que el test creía medir.
+     */
+    private function radiosDeFondoMarcados(string $html): int
+    {
+        return preg_match_all('/name="fondo_id"[^>]*checked/', $html);
+    }
+
     /** Aplana el JSON entero a una lista de valores escalares. */
     private function todosLosValores(mixed $dato): array
     {
@@ -304,7 +317,7 @@ final class SitioPublicoTest extends TestCase
         $this->assertStringContainsString('data-donacion-continuar', $html);
 
         // Ninguno viene marcado: hay que elegir.
-        $this->assertSame(0, substr_count($html, 'checked'));
+        $this->assertSame(0, $this->radiosDeFondoMarcados($html));
         $this->assertStringContainsString('value="'.$uno->id.'"', $html);
         $this->assertStringContainsString('value="'.$dos->id.'"', $html);
     }
@@ -329,7 +342,11 @@ final class SitioPublicoTest extends TestCase
         $html = $this->html(route('donar.fondo', $elegido));
 
         $this->assertStringContainsString('value="'.$elegido->id.'" checked', $html);
-        $this->assertSame(1, substr_count($html, 'checked'), 'Debería haber exactamente un radio marcado.');
+        $this->assertSame(
+            1,
+            $this->radiosDeFondoMarcados($html),
+            'Debería haber exactamente un fondo preseleccionado.'
+        );
     }
 
     /** Un fondo cerrado en la URL avisa, en vez de bloquear el formulario. */
@@ -432,6 +449,45 @@ final class SitioPublicoTest extends TestCase
 
         $this->assertStringNotContainsString('Fondo sin publicar', $html);
         $this->assertStringNotContainsString('PROGRAMA DESTACADO', $html);
+    }
+
+    /**
+     * Los tres «Súmate» de la portada llevan a donar, no a WhatsApp.
+     *
+     * Y el destino se resuelve por el fondo marcado como predeterminado: un
+     * slug escrito a mano en la plantilla se queda apuntando a una campaña
+     * cerrada en cuanto cambie el destacado.
+     */
+    public function test_los_botones_sumate_llevan_al_fondo_destacado(): void
+    {
+        $destacado = $this->fondoDePrueba(['slug' => 'el-destacado', 'nombre' => 'El destacado']);
+
+        $html = $this->html('/');
+
+        $this->assertSame(
+            3,
+            substr_count($html, 'href="'.route('donar.fondo', $destacado).'"') - 1,
+            'Los tres «Súmate» deberían apuntar al fondo destacado (el cuarto enlace es el botón de la tarjeta).'
+        );
+
+        // «Conversemos» es otra intención y se queda donde estaba.
+        $this->assertStringContainsString('wa.me', $html);
+        $this->assertDoesNotMatchRegularExpression('/<a[^>]*wa\.me[^>]*>\s*Súmate/u', $html);
+    }
+
+    /** Si el fondo destacado deja de aceptar donaciones, se cae al selector. */
+    public function test_sumate_cae_al_selector_si_el_destacado_esta_cerrado(): void
+    {
+        $this->fondoDePrueba([
+            'slug' => 'ya-cerrado',
+            'nombre' => 'Ya cerrado',
+            'estado' => EstadoFondo::CERRADO,
+        ]);
+
+        $html = $this->html('/');
+
+        $this->assertStringContainsString('href="'.route('donar').'"', $html);
+        $this->assertStringNotContainsString('href="'.route('donar').'/ya-cerrado"', $html);
     }
 
     // ── AT-90: el feed ───────────────────────────────────────────────────────

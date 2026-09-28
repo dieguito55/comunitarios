@@ -26,8 +26,25 @@ final class PortadaController extends Controller
 {
     public function __invoke(): View
     {
+        $destacado = $this->fondoDestacado();
+
         return view('welcome', [
-            'fondoDestacado' => $this->fondoDestacado(),
+            'fondoDestacado' => $destacado,
+
+            /*
+             * A dónde llevan los botones «Súmate».
+             *
+             * NO se escribe el slug a mano en la plantilla: si mañana el fondo
+             * destacado cambia, un enlace a /donar/fundacion-antonia se queda
+             * apuntando a una campaña cerrada y la gente aterriza en un aviso
+             * en vez de en un formulario.
+             *
+             * Si no hay fondo destacado, o el que hay ya no acepta donaciones,
+             * cae al selector general: allí siempre hay algo que elegir.
+             */
+            'urlDonar' => $destacado !== null && $destacado->aceptaDonaciones()
+                ? route('donar.fondo', $destacado)
+                : route('donar'),
         ]);
     }
 

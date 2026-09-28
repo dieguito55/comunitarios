@@ -1,59 +1,66 @@
 /* =============================================================================
    Panel de administración de comunitarios.org
 
-   Consume los MISMOS tokens de marca que el sitio público, definidos en
-   app.css. Aquí no se declara ni un color nuevo: cuando hace falta un tono
-   intermedio se obtiene con color-mix() sobre un token existente, de modo que
-   si la marca cambia su paleta, el panel la sigue sin tocar una línea.
+   Consume los MISMOS tokens que el sitio público (tokens.css). Ni un color,
+   espaciado, radio, sombra o duración escrito a mano: si aparece un valor
+   suelto en este archivo es un descuido, no una decisión.
+
+   ── COMPARTE TOKENS, NO PERSONALIDAD ──────────────────────────────────────
+   El sitio público es cálido y espacioso: invita a donar. El panel es una
+   herramienta de trabajo donde se decide a dónde va el dinero de una
+   fundación, y tiene que verse sobrio, denso y fiable. Misma paleta, misma
+   tipografía, misma escala; densidad y movimiento distintos.
+
+   ── MOVIMIENTO AL MÍNIMO ──────────────────────────────────────────────────
+   Solo transiciones de hover y foco. Sin entradas animadas, sin contadores,
+   sin brillos. Quien pasa el día aquí no quiere que la pantalla se mueva.
 
    Los estados se pintan con clases (.estado--activo), nunca con color en
-   línea: el dato dice "activo", el CSS decide de qué color se ve.
+   línea: el dato dice «activo», el CSS decide de qué color se ve.
    ========================================================================== */
 
 @import './tokens.css';
 
 :root {
-    /* Tonos derivados: siempre a partir de un token, nunca un hex suelto. */
+    /* Alias con nombre de panel. Todos apuntan a un token: existen para que
+       las reglas de abajo se lean, no para introducir valores nuevos. */
     --admin-lateral: var(--navy-deep);
-    --admin-lateral-activo: color-mix(in srgb, var(--navy) 60%, var(--white));
     --admin-borde: var(--line);
-    --admin-suave: color-mix(in srgb, var(--paper) 70%, var(--white));
+    --admin-suave: var(--superficie-hundida);
 
-    --admin-ok-fondo: color-mix(in srgb, var(--teal) 12%, var(--white));
-    --admin-ok-borde: color-mix(in srgb, var(--teal) 45%, var(--white));
-    --admin-aviso-fondo: color-mix(in srgb, var(--yellow) 16%, var(--white));
-    --admin-aviso-borde: color-mix(in srgb, var(--yellow) 55%, var(--white));
-    --admin-error-fondo: color-mix(in srgb, var(--coral) 10%, var(--white));
-    --admin-error-borde: color-mix(in srgb, var(--coral) 45%, var(--white));
-
-    --admin-radio: 10px;
-    --admin-espacio: 1rem;
+    --admin-ok-fondo: var(--teal-tenue);
+    --admin-ok-borde: color-mix(in srgb, var(--teal) 40%, var(--white));
+    --admin-aviso-fondo: var(--yellow-tenue);
+    --admin-aviso-borde: color-mix(in srgb, var(--yellow) 50%, var(--white));
+    --admin-error-fondo: var(--coral-tenue);
+    --admin-error-borde: color-mix(in srgb, var(--coral) 40%, var(--white));
 }
 
 *,
 *::before,
-*::after {
-    box-sizing: border-box;
-}
+*::after { box-sizing: border-box; }
 
 body.admin {
     margin: 0;
     background: var(--paper);
     color: var(--ink);
     font-family: Manrope, system-ui, -apple-system, "Segoe UI", sans-serif;
-    font-size: 16px;
-    line-height: 1.55;
+
+    /* Nunca por debajo de 16 px, tampoco en móvil: por debajo de eso Safari
+       hace zoom al enfocar un campo y la pantalla salta. */
+    font-size: var(--texto-base);
+    line-height: var(--alto-texto);
 }
 
-/* Accesibilidad: el foco SIEMPRE se ve. Nunca outline: none sin sustituto. */
+/* El foco SIEMPRE se ve. Nunca outline: none sin sustituto. */
 :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
     outline: 3px solid var(--blue);
     outline-offset: 2px;
-    border-radius: 4px;
+    border-radius: var(--radio-sm);
 }
 
 /* Texto solo para lectores de pantalla: amplía la etiqueta de un botón sin
-   ensuciar la interfaz visual ("Editar" -> "Editar Fundación Antonia"). */
+   ensuciar la interfaz visual («Editar» → «Editar Fundación Antonia»). */
 .visually-hidden {
     position: absolute;
     width: 1px;
@@ -61,7 +68,7 @@ body.admin {
     margin: -1px;
     padding: 0;
     overflow: hidden;
-    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
     white-space: nowrap;
     border: 0;
 }
@@ -71,171 +78,242 @@ body.admin {
     position: absolute;
     left: -9999px;
     top: 0;
+    z-index: 200;
+    padding: var(--espacio-3) var(--espacio-4);
+    border-radius: 0 0 var(--radio-md) 0;
     background: var(--white);
+    box-shadow: var(--sombra-md);
     color: var(--ink);
-    padding: 0.75rem 1rem;
-    z-index: 100;
+    font-weight: 700;
 }
 
-.admin-saltar:focus {
-    left: 0;
-}
+.admin-saltar:focus { left: 0; }
 
-/* ── Estructura ─────────────────────────────────────────────────────────── */
+/* =============================================================================
+   ESTRUCTURA
+   ========================================================================== */
 
 .admin-shell {
     display: grid;
-    grid-template-columns: 260px 1fr;
     min-height: 100vh;
+    grid-template-columns: minmax(0, 1fr);
 }
 
 .admin-lateral {
-    background: var(--admin-lateral);
-    color: var(--white);
-    padding: 1.25rem 1rem;
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: var(--espacio-6);
+    padding: var(--espacio-5) var(--espacio-4);
+    background: var(--admin-lateral);
+    color: var(--white);
 }
 
 .admin-lateral__marca {
+    font-size: var(--texto-lg);
     font-weight: 800;
-    font-size: 1.1rem;
-    letter-spacing: -0.01em;
+    letter-spacing: var(--traqueo-titulo);
+    line-height: var(--alto-titulo);
 }
 
 .admin-lateral__marca span {
     display: block;
+    color: color-mix(in srgb, var(--teal) 70%, var(--white));
     font-family: Caveat, cursive;
-    font-size: 1.35rem;
+    font-size: var(--texto-xl);
     font-weight: 500;
-    color: color-mix(in srgb, var(--teal) 80%, var(--white));
 }
+
+/* ── Navegación ────────────────────────────────────────────────────────────
+   El estado activo tiene que ser inequívoco: quien administra necesita saber
+   dónde está sin leer la URL. Fondo claro translúcido, texto blanco y una
+   barra amarilla de 3 px a la izquierda. */
 
 .admin-nav {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: var(--espacio-1);
 }
 
 .admin-nav a {
-    color: color-mix(in srgb, var(--white) 82%, var(--navy));
-    text-decoration: none;
-    padding: 0.6rem 0.75rem;
-    border-radius: var(--admin-radio);
+    display: grid;
+    align-items: center;
+    gap: var(--espacio-3);
+
+    /* Rejilla fija para el icono: así todos los textos empiezan en la misma
+       columna, con icono o sin él. */
+    grid-template-columns: 20px minmax(0, 1fr);
+
+    min-height: 44px;
+    padding: var(--espacio-2) var(--espacio-3);
+    border-left: 3px solid transparent;
+    border-radius: var(--radio-sm);
+    color: color-mix(in srgb, var(--white) 80%, var(--navy));
+    font-size: var(--texto-sm);
     font-weight: 600;
+    text-decoration: none;
+    transition:
+        background var(--transicion-rapida) var(--curva),
+        color var(--transicion-rapida) var(--curva),
+        border-color var(--transicion-rapida) var(--curva);
 }
 
+.admin-nav svg { width: 18px; }
+
 .admin-nav a:hover {
-    background: color-mix(in srgb, var(--white) 10%, transparent);
+    background: color-mix(in srgb, var(--white) 9%, transparent);
     color: var(--white);
 }
 
 .admin-nav a[aria-current="page"] {
-    background: var(--admin-lateral-activo);
+    border-left-color: var(--yellow);
+    background: color-mix(in srgb, var(--white) 14%, transparent);
     color: var(--white);
+    font-weight: 700;
 }
 
 .admin-lateral__pie {
     margin-top: auto;
-    font-size: 0.85rem;
-    color: color-mix(in srgb, var(--white) 70%, var(--navy));
+    color: color-mix(in srgb, var(--white) 72%, var(--navy));
+    font-size: var(--texto-sm);
 }
 
+.admin-lateral__pie p { margin: 0 0 var(--espacio-3); }
+
+/* ── Área de trabajo ───────────────────────────────────────────────────────
+   Sin encajonar en --container: un listado de donaciones necesita aire, y
+   1240 px se quedan cortos con ocho columnas. */
+
 .admin-main {
-    padding: 1.5rem;
-    max-width: var(--container);
     width: 100%;
+    max-width: 1500px;
+    padding: var(--espacio-5) var(--espacio-4);
 }
 
 .admin-encabezado {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--admin-espacio);
-    align-items: baseline;
     justify-content: space-between;
-    margin-bottom: 1.25rem;
+    align-items: flex-start;
+    gap: var(--espacio-4);
+    margin-bottom: var(--espacio-6);
 }
 
 .admin-encabezado h1 {
     margin: 0;
-    font-size: 1.6rem;
-    letter-spacing: -0.02em;
+    font-size: var(--texto-2xl);
+    font-weight: 800;
+    letter-spacing: var(--traqueo-titulo);
+    line-height: var(--alto-titulo);
 }
 
 .admin-encabezado p {
-    margin: 0.25rem 0 0;
+    max-width: 68ch;
+    margin: var(--espacio-2) 0 0;
     color: var(--muted);
+    font-size: var(--texto-sm);
+    line-height: var(--alto-medio);
 }
 
-/* ── Tarjetas y rejillas ────────────────────────────────────────────────── */
+/* =============================================================================
+   TARJETAS Y CIFRAS
+   ========================================================================== */
 
 .admin-tarjeta {
+    margin-bottom: var(--espacio-5);
+    padding: var(--espacio-6);
+    border: var(--borde-sutil);
+    border-radius: var(--radio-lg);
     background: var(--white);
-    border: 1px solid var(--admin-borde);
-    border-radius: var(--admin-radio);
-    padding: 1.1rem;
-    margin-bottom: var(--admin-espacio);
+    box-shadow: var(--sombra-sm);
 }
 
+.admin-tarjeta > :first-child { margin-top: 0; }
+.admin-tarjeta > :last-child { margin-bottom: 0; }
+
+/* minmax(0, 1fr) y nunca 1fr a secas: es lo que evita que un nombre largo
+   ensanche la columna y desborde la rejilla. */
 .admin-rejilla {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: var(--admin-espacio);
+    gap: var(--espacio-5);
+    grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
 }
 
 .admin-cifra {
-    font-size: 1.9rem;
-    font-weight: 800;
-    letter-spacing: -0.02em;
+    font-size: var(--texto-2xl);
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    letter-spacing: var(--traqueo-titulo);
+    line-height: 1.1;
 }
 
 .admin-cifra small {
     display: block;
-    font-size: 0.85rem;
-    font-weight: 600;
+    margin-top: var(--espacio-1);
     color: var(--muted);
+    font-size: var(--texto-sm);
+    font-weight: 600;
     letter-spacing: 0;
 }
 
-/* ── Estados: el dato dice el nombre, el CSS elige el color ─────────────── */
+/* =============================================================================
+   INSIGNIAS DE ESTADO
+   =============================================================================
+   Píldora con un punto de color a la izquierda. El texto usa los tokens de
+   contraste (--teal-texto, --yellow-texto, --coral-texto): los colores de
+   marca a pelo no llegan a 4.5:1 sobre sus propios fondos tenues.
+   ========================================================================== */
 
 .estado {
-    display: inline-block;
-    padding: 0.2rem 0.6rem;
-    border-radius: 999px;
-    font-size: 0.78rem;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--espacio-2);
+    min-height: 24px;
+    padding: 0 var(--espacio-3);
+    border: 1px solid var(--admin-borde);
+    border-radius: var(--radio-full);
+    font-size: var(--texto-xs);
     font-weight: 700;
+    letter-spacing: var(--traqueo-etiqueta);
     text-transform: uppercase;
-    letter-spacing: 0.02em;
+}
+
+.estado::before {
+    width: 6px;
+    height: 6px;
+    flex: none;
+    border-radius: var(--radio-full);
+    background: currentColor;
+    content: '';
 }
 
 .estado--activo,
-.estado--aprobado {
+.estado--aprobado,
+.estado--superadmin {
+    border-color: var(--admin-ok-borde);
     background: var(--admin-ok-fondo);
-    color: color-mix(in srgb, var(--teal) 70%, var(--ink));
-    border: 1px solid var(--admin-ok-borde);
+    color: var(--teal-texto);
 }
 
-.estado--borrador {
+.estado--borrador,
+.estado--editor {
+    border-color: var(--admin-borde);
     background: var(--admin-suave);
     color: var(--muted);
-    border: 1px solid var(--admin-borde);
 }
 
 .estado--pausado,
 .estado--pendiente,
 .estado--en_proceso {
+    border-color: var(--admin-aviso-borde);
     background: var(--admin-aviso-fondo);
-    color: color-mix(in srgb, var(--ink) 75%, var(--yellow));
-    border: 1px solid var(--admin-aviso-borde);
+    color: var(--yellow-texto);
 }
 
 .estado--cerrado,
 .estado--rechazado {
+    border-color: var(--admin-error-borde);
     background: var(--admin-error-fondo);
-    color: color-mix(in srgb, var(--coral) 65%, var(--ink));
-    border: 1px solid var(--admin-error-borde);
+    color: var(--coral-texto);
 }
 
 /* ── Colores de fondo: tokens, nunca hex en los datos ───────────────────── */
@@ -248,335 +326,693 @@ body.admin {
 
 .fondo-muestra {
     display: inline-block;
-    width: 1.4rem;
-    height: 1.4rem;
-    border-radius: 50%;
-    background: var(--fondo-color, var(--teal));
+    width: 22px;
+    height: 22px;
     border: 2px solid var(--white);
-    box-shadow: 0 0 0 1px var(--admin-borde);
+    border-radius: var(--radio-full);
+    background: var(--fondo-color, var(--teal));
+    box-shadow: 0 0 0 1px var(--borde-control);
     vertical-align: middle;
 }
 
 /* ── Barra de progreso ──────────────────────────────────────────────────── */
 
 .admin-progreso {
-    background: var(--admin-suave);
-    border-radius: 999px;
-    height: 0.6rem;
+    height: 10px;
     overflow: hidden;
+    border-radius: var(--radio-full);
+    background: var(--admin-suave);
     border: 1px solid var(--admin-borde);
 }
 
 .admin-progreso__relleno {
     height: 100%;
-    background: var(--teal);
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--fondo-color, var(--teal)), var(--yellow));
 }
 
-/* ── Avisos ─────────────────────────────────────────────────────────────── */
+/* =============================================================================
+   AVISOS
+   ========================================================================== */
 
 .admin-aviso {
-    border-radius: var(--admin-radio);
-    padding: 0.85rem 1rem;
-    margin-bottom: var(--admin-espacio);
+    margin-bottom: var(--espacio-5);
+    padding: var(--espacio-4);
     border: 1px solid var(--admin-borde);
+    border-left: 3px solid var(--blue);
+    border-radius: var(--radio-md);
     background: var(--white);
+    font-size: var(--texto-sm);
+    line-height: var(--alto-medio);
 }
 
 .admin-aviso--exito {
-    background: var(--admin-ok-fondo);
     border-color: var(--admin-ok-borde);
+    border-left-color: var(--teal);
+    background: var(--admin-ok-fondo);
 }
 
 .admin-aviso--error {
-    background: var(--admin-error-fondo);
     border-color: var(--admin-error-borde);
+    border-left-color: var(--coral);
+    background: var(--admin-error-fondo);
 }
 
 .admin-aviso--atencion {
-    background: var(--admin-aviso-fondo);
     border-color: var(--admin-aviso-borde);
+    border-left-color: var(--yellow);
+    background: var(--admin-aviso-fondo);
 }
 
 .admin-aviso h2 {
-    margin: 0 0 0.35rem;
-    font-size: 1rem;
+    margin: 0 0 var(--espacio-2);
+    font-size: var(--texto-base);
+    font-weight: 800;
 }
 
-.admin-aviso ul {
-    margin: 0.35rem 0 0;
-    padding-left: 1.2rem;
-}
+.admin-aviso ul { margin: var(--espacio-2) 0 0; padding-left: var(--espacio-5); }
 
-/* ── Formularios ────────────────────────────────────────────────────────── */
+/* =============================================================================
+   FORMULARIOS
+   =============================================================================
+   Misma gramática que el sitio público, en versión compacta: 44 px de alto en
+   vez de 48, que es el mínimo táctil sin desperdiciar pantalla en una
+   herramienta de trabajo.
+   ========================================================================== */
 
-.campo {
-    margin-bottom: 1.1rem;
-}
+.campo { margin-bottom: var(--espacio-5); }
 
 .campo label {
     display: block;
+    margin-bottom: var(--espacio-2);
+    color: var(--ink);
+    font-size: var(--texto-sm);
     font-weight: 700;
-    margin-bottom: 0.3rem;
 }
 
 .campo__ayuda {
     display: block;
-    font-size: 0.88rem;
+    margin-bottom: var(--espacio-2);
     color: var(--muted);
-    margin-bottom: 0.4rem;
+    font-size: var(--texto-sm);
+    line-height: var(--alto-medio);
 }
 
 .campo input[type="text"],
 .campo input[type="password"],
 .campo input[type="number"],
 .campo input[type="date"],
+.campo input[type="email"],
 .campo input[type="file"],
 .campo select,
 .campo textarea {
     width: 100%;
-    padding: 0.6rem 0.7rem;
-    border: 1px solid var(--admin-borde);
-    border-radius: var(--admin-radio);
-    font: inherit;
-    color: var(--ink);
+    min-height: 44px;
+    padding: var(--espacio-2) var(--espacio-3);
+    border: 1.5px solid var(--borde-control);
+    border-radius: var(--radio-md);
     background: var(--white);
+    color: var(--ink);
+    font: inherit;
+    transition:
+        border-color var(--transicion-rapida) var(--curva),
+        box-shadow var(--transicion-rapida) var(--curva);
 }
 
-.campo textarea {
-    min-height: 9rem;
-    resize: vertical;
+.campo input:focus-visible,
+.campo select:focus-visible,
+.campo textarea:focus-visible {
+    border-color: var(--blue);
+    box-shadow: var(--foco-anillo);
+    outline: none;
 }
 
+.campo textarea { min-height: 9rem; line-height: var(--alto-texto); resize: vertical; }
+
+/* El error EMPUJA el contenido, no lo tapa. */
 .campo--error input,
 .campo--error select,
 .campo--error textarea {
     border-color: var(--coral);
-    border-width: 2px;
+    background: var(--coral-tenue);
 }
 
 .campo__error {
-    display: block;
-    margin-top: 0.3rem;
-    color: color-mix(in srgb, var(--coral) 75%, var(--ink));
-    font-weight: 600;
-    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: var(--espacio-2);
+    margin-top: var(--espacio-2);
+    color: var(--coral-texto);
+    font-size: var(--texto-sm);
+    font-weight: 700;
 }
 
-/* Selector visual de color, con los 5 tokens de la paleta. */
-.selector-color {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem;
+.campo__error::before { content: '⚠'; flex: none; }
+.campo__error:empty { display: none; }
+
+/* ── Secciones de un formulario largo ──────────────────────────────────────
+   Crear un fondo tiene catorce campos. En lista plana es donde más se
+   equivoca quien lo rellena: agrupados por lo que significan, se entiende qué
+   se está decidiendo en cada tramo. */
+
+.admin-seccion { margin-bottom: var(--espacio-8); }
+.admin-seccion:last-child { margin-bottom: 0; }
+
+.admin-seccion > h2 {
+    margin: 0 0 var(--espacio-1);
+    padding-bottom: var(--espacio-2);
+    border-bottom: var(--borde);
+    font-size: var(--texto-lg);
+    font-weight: 800;
+    letter-spacing: var(--traqueo-titulo);
 }
+
+.admin-seccion > p {
+    margin: 0 0 var(--espacio-5);
+    color: var(--muted);
+    font-size: var(--texto-sm);
+    line-height: var(--alto-medio);
+}
+
+.admin-campos {
+    display: grid;
+    gap: 0 var(--espacio-5);
+    grid-template-columns: minmax(0, 1fr);
+}
+
+/* Los textos largos y los bloques anchos ocupan la fila entera. Se detecta por
+   lo que contiene el campo y no por una clase que haya que acordarse de poner:
+   un textarea en media columna es ilegible, y el que lo olvide una vez lo
+   olvidará siempre. */
+.admin-campos > .campo--ancho,
+.admin-campos > fieldset,
+.admin-campos > .campo:has(textarea),
+.admin-campos > .campo:has(input[type="file"]) { grid-column: 1 / -1; }
+
+/* Selector visual de color, con los 5 tokens de la paleta. */
+.selector-color { display: flex; flex-wrap: wrap; gap: var(--espacio-3); }
 
 .selector-color label {
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
-    padding: 0.4rem 0.7rem;
-    border: 2px solid var(--admin-borde);
-    border-radius: var(--admin-radio);
+    gap: var(--espacio-2);
+    min-height: 44px;
+    margin-bottom: 0;
+    padding: var(--espacio-2) var(--espacio-3);
+    border: 2px solid var(--borde-control);
+    border-radius: var(--radio-md);
     cursor: pointer;
     font-weight: 600;
 }
 
-.selector-color input {
-    margin: 0;
-}
+.selector-color input { margin: 0; accent-color: var(--fondo-color, var(--teal)); }
 
 .selector-color label:has(input:checked) {
     border-color: var(--fondo-color, var(--teal));
     background: var(--admin-suave);
 }
 
-/* ── Botones ────────────────────────────────────────────────────────────── */
+/* =============================================================================
+   BOTONES
+   ========================================================================== */
 
 .boton {
-    display: inline-block;
-    padding: 0.6rem 1.1rem;
-    border-radius: var(--admin-radio);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--espacio-2);
+    min-height: 40px;
+    padding: 0 var(--espacio-5);
     border: 1px solid transparent;
-    font: inherit;
-    font-weight: 700;
-    cursor: pointer;
-    text-decoration: none;
+    border-radius: var(--radio-md);
     background: var(--navy);
     color: var(--white);
+    cursor: pointer;
+    font: inherit;
+    font-size: var(--texto-sm);
+    font-weight: 600;
+    text-decoration: none;
+    transition:
+        background var(--transicion-rapida) var(--curva),
+        border-color var(--transicion-rapida) var(--curva);
 }
 
-.boton:hover {
-    background: color-mix(in srgb, var(--navy) 85%, var(--white));
-}
+.boton:hover { background: color-mix(in srgb, var(--navy) 86%, var(--white)); }
 
 .boton--secundario {
+    border-color: var(--borde-control);
     background: var(--white);
     color: var(--ink);
-    border-color: var(--admin-borde);
 }
 
-.boton--confirmar {
-    background: var(--teal);
-}
+.boton--secundario:hover { border-color: var(--blue); background: var(--blue-tenue); }
 
-.boton--peligro {
-    background: var(--coral);
-}
+.boton--confirmar { background: var(--teal); }
+.boton--confirmar:hover { background: color-mix(in srgb, var(--teal) 86%, var(--ink)); }
 
-.boton[disabled] {
-    opacity: 0.55;
-    cursor: not-allowed;
-}
+.boton--peligro { background: var(--coral); }
+.boton--peligro:hover { background: color-mix(in srgb, var(--coral) 86%, var(--ink)); }
+
+.boton[disabled] { cursor: not-allowed; opacity: 0.5; }
+.boton[disabled]:hover { background: var(--navy); }
 
 .acciones {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.6rem;
     align-items: center;
+    gap: var(--espacio-3);
 }
 
-/* ── Tablas ─────────────────────────────────────────────────────────────── */
+/* =============================================================================
+   TABLAS
+   =============================================================================
+   Es la pieza que más se usa. Cabecera pegajosa para no perder los nombres de
+   columna al desplazar, filas alternas muy tenues, y los importes a la derecha
+   con cifras tabulares: sin eso, dos columnas de dinero no se pueden comparar
+   de un vistazo.
+   ========================================================================== */
 
 .admin-tabla-envoltorio {
-    overflow-x: auto;
+    position: relative;
+    max-height: 72vh;
+    overflow: auto;
+    border: var(--borde-sutil);
+    border-radius: var(--radio-lg);
+    background: var(--white);
+    box-shadow: var(--sombra-sm);
 }
 
 .admin-tabla {
     width: 100%;
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
     background: var(--white);
 }
 
 .admin-tabla th,
 .admin-tabla td {
-    text-align: left;
-    padding: 0.7rem 0.75rem;
+    height: 56px;
+    padding: var(--espacio-3) var(--espacio-4);
     border-bottom: 1px solid var(--admin-borde);
+    text-align: left;
     vertical-align: middle;
 }
 
-.admin-tabla th {
-    font-size: 0.82rem;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-    color: var(--muted);
-}
-
-.admin-tabla tbody tr:hover {
+.admin-tabla thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    height: auto;
+    border-bottom: 1.5px solid var(--borde-control);
     background: var(--admin-suave);
+    color: var(--muted);
+    font-size: var(--texto-xs);
+    font-weight: 700;
+    letter-spacing: var(--traqueo-etiqueta);
+    text-transform: uppercase;
+    white-space: nowrap;
 }
 
-/* ── Galería ────────────────────────────────────────────────────────────── */
+.admin-tabla tbody tr:nth-child(even) { background: color-mix(in srgb, var(--paper) 55%, var(--white)); }
+.admin-tabla tbody tr:hover { background: var(--blue-tenue); }
+.admin-tabla tbody tr:last-child td { border-bottom: 0; }
+
+/* =============================================================================
+   GALERÍA
+   ========================================================================== */
 
 .galeria {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 0.75rem;
+    gap: var(--espacio-3);
+    grid-template-columns: repeat(auto-fill, minmax(min(150px, 100%), 1fr));
 }
 
 .galeria figure {
     margin: 0;
-    border: 1px solid var(--admin-borde);
-    border-radius: var(--admin-radio);
     overflow: hidden;
+    border: var(--borde);
+    border-radius: var(--radio-md);
     background: var(--white);
 }
 
-.galeria img {
-    width: 100%;
-    height: 110px;
-    object-fit: cover;
-    display: block;
-}
-
-.galeria figcaption {
-    padding: 0.5rem;
-    font-size: 0.85rem;
-}
+.galeria img { display: block; width: 100%; height: 110px; object-fit: cover; }
+.galeria figcaption { padding: var(--espacio-2); font-size: var(--texto-sm); }
 
 .portada-previa img {
     max-width: 100%;
-    border-radius: var(--admin-radio);
-    border: 1px solid var(--admin-borde);
+    border: var(--borde);
+    border-radius: var(--radio-md);
 }
 
-/* ── Login ──────────────────────────────────────────────────────────────── */
+/* =============================================================================
+   ACCESO
+   =============================================================================
+   Primera pantalla de quien administra. Tarjeta centrada sobre navy, con el
+   arco amarillo de la marca: se reconoce como Comunitarios antes de leer nada.
+   ========================================================================== */
 
 .login-pantalla {
-    min-height: 100vh;
+    position: relative;
     display: grid;
+    min-height: 100vh;
+    overflow: hidden;
     place-items: center;
-    padding: 1.5rem;
-    background: var(--navy-deep);
+    padding: var(--espacio-6);
+    background: linear-gradient(135deg, var(--navy-deep), var(--navy) 60%, var(--blue));
+}
+
+.login-pantalla::before {
+    position: absolute;
+    top: -14%;
+    right: -18%;
+    width: 640px;
+    height: 360px;
+    border: 1px solid color-mix(in srgb, var(--yellow) 52%, transparent);
+    border-radius: var(--radio-full);
+    content: '';
+    transform: rotate(-6deg);
 }
 
 .login-caja {
-    background: var(--white);
-    border-radius: 14px;
-    box-shadow: var(--shadow);
-    padding: 1.75rem;
+    position: relative;
+    z-index: 1;
     width: 100%;
-    max-width: 26rem;
+    max-width: 420px;
+    padding: var(--espacio-8);
+    border-radius: var(--radio-xl);
+    background: var(--white);
+    box-shadow: var(--sombra-elevada);
+}
+
+.login-caja__logo {
+    display: block;
+    width: 52px;
+    height: 52px;
+    margin-bottom: var(--espacio-5);
+    border-radius: var(--radio-md);
+    object-fit: cover;
 }
 
 .login-caja h1 {
-    margin: 0 0 0.25rem;
-    font-size: 1.4rem;
+    margin: 0 0 var(--espacio-1);
+    font-size: var(--texto-xl);
+    font-weight: 800;
+    letter-spacing: var(--traqueo-titulo);
 }
 
 .login-caja p.subtitulo {
-    margin: 0 0 1.25rem;
+    margin: 0 0 var(--espacio-6);
     color: var(--muted);
+    font-size: var(--texto-sm);
 }
 
-/* ── Móvil: la fundación edita desde el teléfono ────────────────────────── */
+.login-caja .boton { width: 100%; min-height: 48px; }
 
-@media (max-width: 860px) {
-    .admin-shell {
-        grid-template-columns: 1fr;
-    }
+/* =============================================================================
+   COLA DE VERIFICACIÓN DEL CANAL QR
+   ========================================================================== */
+
+/* El número de pendientes, en la propia navegación: la cola es trabajo que se
+   acumula, y si no se ve al entrar no se hace. */
+.admin-nav__contador {
+    display: inline-grid;
+    min-width: 22px;
+    height: 22px;
+    place-items: center;
+    padding: 0 var(--espacio-2);
+    border-radius: var(--radio-full);
+    background: var(--coral);
+    color: var(--white);
+    font-size: var(--texto-xs);
+    font-weight: 700;
+}
+
+.admin-nav a span:last-child { display: flex; align-items: center; justify-content: space-between; gap: var(--espacio-2); }
+
+.admin-filtros {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--espacio-4);
+    margin-bottom: var(--espacio-5);
+}
+
+.admin-filtros .campo { min-width: 180px; margin-bottom: 0; }
+
+.admin-vacio { padding: var(--espacio-10) var(--espacio-6); text-align: center; }
+.admin-vacio p { margin: 0 0 var(--espacio-2); color: var(--muted); }
+.admin-vacio strong { color: var(--ink); }
+
+.admin-tabla__leyenda {
+    padding: var(--espacio-3) var(--espacio-4);
+    color: var(--muted);
+    font-size: var(--texto-sm);
+    text-align: left;
+}
+
+/* Los importes a la derecha y con cifras tabulares. */
+.admin-tabla__numero {
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.admin-tabla__apunte {
+    display: block;
+    margin-top: var(--espacio-1);
+    color: var(--muted);
+    font-size: var(--texto-xs);
+    line-height: var(--alto-medio);
+}
+
+/* ── Miniatura del comprobante ─────────────────────────────────────────── */
+
+.admin-miniatura {
+    display: grid;
+    gap: var(--espacio-1);
+    overflow: hidden;
+    padding: 0;
+    border: 1px solid var(--borde-control);
+    border-radius: var(--radio-sm);
+    background: var(--white);
+    cursor: zoom-in;
+    transition: border-color var(--transicion-rapida) var(--curva);
+}
+
+.admin-miniatura:hover { border-color: var(--blue); }
+.admin-miniatura img { display: block; width: 84px; height: 56px; object-fit: cover; }
+
+.admin-miniatura span {
+    padding-bottom: var(--espacio-1);
+    color: var(--blue);
+    font-size: var(--texto-xs);
+    font-weight: 600;
+}
+
+/* ── Diálogos ──────────────────────────────────────────────────────────────
+   <dialog> nativo: trae el foco atrapado, el cierre con Escape y el fondo
+   inerte sin programar nada. Sustituye al confirm() del navegador, que no se
+   puede estilar y que algunos navegadores permiten silenciar. */
+
+.admin-dialogo,
+.admin-visor {
+    padding: 0;
+    border: 0;
+    border-radius: var(--radio-lg);
+    background: var(--superficie);
+    box-shadow: var(--sombra-elevada);
+    color: var(--ink);
+}
+
+.admin-dialogo::backdrop,
+.admin-visor::backdrop {
+    background: color-mix(in srgb, var(--navy-deep) 72%, transparent);
+    backdrop-filter: blur(3px);
+}
+
+.admin-dialogo { width: min(520px, calc(100vw - var(--espacio-8))); }
+.admin-dialogo form { padding: var(--espacio-6); }
+
+.admin-dialogo h2 {
+    margin: 0 0 var(--espacio-3);
+    font-size: var(--texto-xl);
+    font-weight: 800;
+    letter-spacing: var(--traqueo-titulo);
+    line-height: var(--alto-titulo);
+}
+
+.admin-dialogo__resumen {
+    margin: 0 0 var(--espacio-5);
+    padding: var(--espacio-3) var(--espacio-4);
+    border-radius: var(--radio-md);
+    background: var(--admin-suave);
+    color: var(--muted);
+    font-size: var(--texto-sm);
+    line-height: var(--alto-medio);
+}
+
+.admin-dialogo__resumen strong { color: var(--ink); }
+
+.admin-dialogo__acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--espacio-3);
+    margin-top: var(--espacio-5);
+    padding-top: var(--espacio-5);
+    border-top: var(--borde);
+}
+
+.admin-casilla {
+    display: grid;
+    align-items: start;
+    gap: var(--espacio-3);
+    grid-template-columns: 22px minmax(0, 1fr);
+    cursor: pointer;
+    font-size: var(--texto-sm);
+    line-height: var(--alto-medio);
+}
+
+.admin-casilla input { width: 22px; height: 22px; margin: 0; accent-color: var(--coral); }
+
+/* ── Visor del comprobante ─────────────────────────────────────────────────
+   Fondo oscuro: una captura de pantalla se lee mejor sin un marco blanco
+   compitiendo con ella. Es el dato sensible de esta pantalla. */
+
+.admin-visor {
+    width: min(920px, calc(100vw - var(--espacio-6)));
+    max-width: none;
+    max-height: calc(100vh - var(--espacio-6));
+    background: var(--navy-deep);
+    color: var(--white);
+}
+
+.admin-visor__barra {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--espacio-4);
+    padding: var(--espacio-4) var(--espacio-5);
+    border-bottom: 1px solid var(--linea-oscura);
+}
+
+.admin-visor__barra h2 { margin: 0; font-size: var(--texto-base); font-weight: 700; }
+
+.admin-visor__lienzo {
+    max-height: 70vh;
+    overflow: auto;
+    background: color-mix(in srgb, var(--navy-deep) 60%, var(--navy));
+    text-align: center;
+}
+
+.admin-visor__lienzo img { display: block; max-width: 100%; margin: 0 auto; cursor: zoom-in; }
+
+/* Ampliado: la imagen pasa a doble tamaño y el contenedor se desplaza. Es lo
+   que permite leer el número de operación, que suele quedar en un borde. */
+.admin-visor__lienzo.esta-ampliado { cursor: grab; }
+.admin-visor__lienzo.esta-ampliado img { width: 200%; max-width: none; cursor: grab; }
+
+.admin-visor__ayuda {
+    margin: 0;
+    padding: var(--espacio-3) var(--espacio-5);
+    border-top: 1px solid var(--linea-oscura);
+    color: var(--sobre-oscuro-tenue);
+    font-size: var(--texto-xs);
+}
+
+/* =============================================================================
+   ADAPTACIÓN A PANTALLAS — móvil primero
+   Cortes: 480, 768, 1024, 1280.
+   ========================================================================== */
+
+@media (min-width: 768px) {
+    .admin-main { padding: var(--espacio-6); }
+    .admin-campos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (min-width: 1024px) {
+    /* La lateral pasa a columna fija. 260 px es lo que cabe con los textos de
+       navegación más largos sin partirlos. */
+    .admin-shell { grid-template-columns: 260px minmax(0, 1fr); }
 
     .admin-lateral {
-        flex-direction: column;
-        gap: 0.75rem;
-        padding: 1rem;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        padding: var(--espacio-6) var(--espacio-4);
+    }
+
+    .admin-main { padding: var(--espacio-8); }
+}
+
+/* Por debajo de 1024 la lateral es una barra superior con la navegación en
+   horizontal. Sin menú hamburguesa: son cuatro entradas y un JavaScript nuevo
+   para esconderlas sería más frágil que dejarlas a la vista. */
+@media (max-width: 1023px) {
+    .admin-lateral {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--espacio-4);
+        padding: var(--espacio-3) var(--espacio-4);
     }
 
     .admin-nav {
+        flex: 1;
         flex-direction: row;
-        flex-wrap: wrap;
+        gap: var(--espacio-2);
+        overflow-x: auto;
+        scrollbar-width: thin;
+    }
+
+    .admin-nav a {
+        flex: none;
+        border-left: 0;
+        border-bottom: 3px solid transparent;
+        white-space: nowrap;
+    }
+
+    .admin-nav a[aria-current="page"] {
+        border-left-color: transparent;
+        border-bottom-color: var(--yellow);
     }
 
     .admin-lateral__pie {
-        margin-top: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: var(--espacio-3);
+        margin-top: 0;
     }
 
-    .admin-main {
-        padding: 1rem;
+    .admin-lateral__pie p { margin: 0; }
+
+    /* Sombra en el borde derecho: dice que la tabla sigue. */
+    .admin-tabla-envoltorio {
+        max-height: none;
+        background:
+            linear-gradient(90deg, var(--white) 30%, transparent),
+            linear-gradient(270deg, var(--white) 30%, transparent) right,
+            radial-gradient(farthest-side at 100% 50%, color-mix(in srgb, var(--navy) 18%, transparent), transparent) right;
+        background-repeat: no-repeat;
+        background-size: 40px 100%, 40px 100%, 14px 100%;
+        background-attachment: local, local, scroll;
     }
 }
 
-/* A 360 px nada puede desbordar ni obligar a hacer scroll horizontal. */
-@media (max-width: 400px) {
-    body.admin {
-        font-size: 15px;
-    }
-
-    .admin-main {
-        padding: 0.75rem;
-    }
-
-    .admin-encabezado h1 {
-        font-size: 1.3rem;
-    }
-
-    .acciones .boton {
-        width: 100%;
-        text-align: center;
-    }
+@media (max-width: 479px) {
+    .admin-main { padding: var(--espacio-4) var(--espacio-3); }
+    .admin-tarjeta { padding: var(--espacio-4); }
+    .acciones .boton { flex: 1; }
+    .admin-encabezado { gap: var(--espacio-3); }
 }
+
+/* =============================================================================
+   MOVIMIENTO REDUCIDO
+   ========================================================================== */
 
 @media (prefers-reduced-motion: reduce) {
-    * {
+    *,
+    *::before,
+    *::after {
         animation: none !important;
         transition: none !important;
     }

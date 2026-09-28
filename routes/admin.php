@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\PredeterminadoFondoController;
 use App\Http\Controllers\Admin\ResumenController;
 use App\Http\Controllers\Admin\SesionController;
 use App\Http\Controllers\Admin\UsuarioAdminController;
+use App\Http\Controllers\Admin\VerificacionController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -60,6 +61,16 @@ Route::middleware('auth:admin')->group(function (): void {
     Route::post('/fondos/{fondo}/medios', [MedioFondoController::class, 'guardar'])->name('fondos.medios.guardar');
     Route::delete('/fondos/{fondo}/medios/{medio}', [MedioFondoController::class, 'eliminar'])->name('fondos.medios.eliminar');
     Route::post('/fondos/{fondo}/medios/orden', [MedioFondoController::class, 'reordenar'])->name('fondos.medios.reordenar');
+
+    /*
+    | Cola de verificacion del canal QR. La ven los dos roles: revisar un
+    | comprobante es trabajo operativo, no una decision de gobierno
+    | (DonacionPolicy). El comprobante se sirve desde el disco PRIVADO por esta
+    | ruta y nunca por una URL directa.
+    */
+    Route::get('/verificacion', [VerificacionController::class, 'index'])->name('verificacion.index');
+    Route::get('/verificacion/{donacion}/comprobante', [VerificacionController::class, 'comprobante'])->name('verificacion.comprobante');
+    Route::post('/verificacion/{donacion}', [VerificacionController::class, 'verificar'])->name('verificacion.verificar');
 
     // Administradores. Solo superadmin (AdminUserPolicy).
     Route::get('/usuarios', [UsuarioAdminController::class, 'index'])->name('usuarios.index');

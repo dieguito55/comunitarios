@@ -116,11 +116,15 @@
             <a href="#historias">Historias</a>
             <a href="#aliados">Aliados</a>
         </nav>
-        <a class="button button-coral header-cta" href="https://wa.me/51958494125?text=Hola%20Comunitarios%2C%20quiero%20sumarme%20y%20conocer%20cómo%20puedo%20apoyar." target="_blank" rel="noopener noreferrer">Súmate</a>
+        {{-- «Súmate» lleva a donar, no a WhatsApp. La URL la resuelve
+             PortadaController a partir del fondo marcado como predeterminado, y
+             cae al selector general si ese fondo ya no acepta donaciones: así
+             no hay ningún slug escrito a mano que se quede obsoleto. --}}
+        <a class="button button-coral header-cta" href="{{ $urlDonar }}">Súmate</a>
         <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="mobile-menu" aria-label="Abrir menú"><span></span><span></span><span></span></button>
     </div>
     <nav class="mobile-nav" id="mobile-menu" hidden>
-        <a href="#que-hacemos">Qué hacemos</a><a href="#programas">Programas</a><a href="#historias">Historias</a><a href="#aliados">Aliados</a><a href="https://wa.me/51958494125?text=Hola%20Comunitarios%2C%20quiero%20sumarme%20y%20conocer%20cómo%20puedo%20apoyar." target="_blank" rel="noopener noreferrer">Súmate</a>
+        <a href="#que-hacemos">Qué hacemos</a><a href="#programas">Programas</a><a href="#historias">Historias</a><a href="#aliados">Aliados</a><a href="{{ $urlDonar }}">Súmate</a>
     </nav>
 </header>
 
@@ -229,6 +233,20 @@
         @endforeach
     </section>
 
+    {{--
+        DASHBOARD EN VIVO DE LA CAMPAÑA
+
+        Va justo después de la barra de indicadores de impacto y antes de «Qué
+        hacemos»: los cuatro números de arriba son la trayectoria de la
+        fundación —escritos a mano, los confirma la organización— y este bloque
+        es lo que está pasando AHORA con el dinero, leído de la base de datos y
+        refrescado solo cada 30 segundos. Juntos se leen como una misma idea:
+        esto hemos hecho, esto se está recaudando.
+    --}}
+    <section class="section container">
+        @include('publico.componentes.dashboard')
+    </section>
+
     <section class="section container intro-grid" id="que-hacemos">
         <div class="about-copy reveal">
             <p class="eyebrow">QUIÉNES SOMOS</p>
@@ -330,7 +348,7 @@
 
     <section class="join" id="sumate">
         <div class="media-slot join-media" data-file="diferencia.webp"><span>Cargando comunidad Fondo Antonia…</span></div>
-        <div class="container join-grid"><div></div><div class="join-copy reveal"><h2><em>Juntos</em> ♡<br><span>hacemos la diferencia</span></h2><p>Cada acción, alianza e historia nos acerca a un Puno más justo, próspero y unido.</p></div><div class="join-actions reveal"><div><a class="button button-coral" href="https://wa.me/51958494125?text=Hola%20Comunitarios%2C%20quiero%20sumarme%20y%20conocer%20cómo%20puedo%20apoyar." target="_blank" rel="noopener noreferrer">Súmate</a><a class="button button-outline" href="https://wa.me/51958494125?text=Hola%20Comunitarios%2C%20me%20gustaría%20conversar%20con%20ustedes." target="_blank" rel="noopener noreferrer">Conversemos</a></div><p><span><i data-lucide="handshake"></i><strong>24</strong> organizaciones aliadas articuladas</span><span><i data-lucide="users-round"></i><strong>57</strong> profesionales involucrados</span></p></div></div>
+        <div class="container join-grid"><div></div><div class="join-copy reveal"><h2><em>Juntos</em> ♡<br><span>hacemos la diferencia</span></h2><p>Cada acción, alianza e historia nos acerca a un Puno más justo, próspero y unido.</p></div><div class="join-actions reveal"><div><a class="button button-coral" href="{{ $urlDonar }}">Súmate</a><a class="button button-outline" href="https://wa.me/51958494125?text=Hola%20Comunitarios%2C%20me%20gustaría%20conversar%20con%20ustedes." target="_blank" rel="noopener noreferrer">Conversemos</a></div><p><span><i data-lucide="handshake"></i><strong>24</strong> organizaciones aliadas articuladas</span><span><i data-lucide="users-round"></i><strong>57</strong> profesionales involucrados</span></p></div></div>
     </section>
 </main>
 

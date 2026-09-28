@@ -53,7 +53,7 @@
                                 @unless ($yo?->is($usuario))
                                     <form method="POST"
                                           action="{{ route('admin.usuarios.eliminar', $usuario) }}"
-                                          onsubmit="return confirm('Se va a eliminar a «{{ $usuario->username }}». ¿Continuar?');">
+                                          data-confirmar="Se va a eliminar a «{{ $usuario->username }}». Perderá el acceso al panel de inmediato.">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="boton boton--peligro">

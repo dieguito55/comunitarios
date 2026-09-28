@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex, nofollow">
     <title>@yield('titulo', 'Panel') · Comunitarios</title>
-    @vite('resources/css/admin.css')
+    @vite(['resources/css/admin.css', 'resources/js/admin.js'])
 </head>
 <body class="admin">
 
@@ -22,15 +22,40 @@
         </div>
 
         <nav class="admin-nav" aria-label="Secciones del panel">
+            {{-- Iconos en rejilla fija: los textos empiezan todos en la misma
+                 columna, que es lo que hace que el menu se lea de un vistazo. --}}
             <a href="{{ route('admin.resumen') }}"
-               @if(request()->routeIs('admin.resumen')) aria-current="page" @endif>Resumen</a>
+               @if(request()->routeIs('admin.resumen')) aria-current="page" @endif>
+                <i data-lucide="layout-dashboard" aria-hidden="true"></i>
+                <span>Resumen</span>
+            </a>
 
             <a href="{{ route('admin.fondos.index') }}"
-               @if(request()->routeIs('admin.fondos.*')) aria-current="page" @endif>Fondos</a>
+               @if(request()->routeIs('admin.fondos.*')) aria-current="page" @endif>
+                <i data-lucide="folder-heart" aria-hidden="true"></i>
+                <span>Fondos</span>
+            </a>
+
+            {{-- El contador sale en la propia navegacion porque la cola es
+                 trabajo que se acumula: si no se ve al entrar, no se hace. --}}
+            @php($pendientesQr = \App\Http\Controllers\Admin\VerificacionController::pendientes())
+            <a href="{{ route('admin.verificacion.index') }}"
+               @if(request()->routeIs('admin.verificacion.*')) aria-current="page" @endif>
+                <i data-lucide="receipt-text" aria-hidden="true"></i>
+                <span>
+                    Verificación
+                    @if ($pendientesQr > 0)
+                        <span class="admin-nav__contador" aria-label="{{ $pendientesQr }} pendientes">{{ $pendientesQr }}</span>
+                    @endif
+                </span>
+            </a>
 
             @can('verCualquiera', App\Models\AdminUser::class)
                 <a href="{{ route('admin.usuarios.index') }}"
-                   @if(request()->routeIs('admin.usuarios.*')) aria-current="page" @endif>Administradores</a>
+                   @if(request()->routeIs('admin.usuarios.*')) aria-current="page" @endif>
+                    <i data-lucide="users-round" aria-hidden="true"></i>
+                    <span>Administradores</span>
+                </a>
             @endcan
         </nav>
 
@@ -75,6 +100,14 @@
                     {{ session('estado') }}
                 </div>
             @endif
+
+            {{-- Un fallo operativo que no es de validacion: por ejemplo, que
+                 otra persona ya hubiera revisado el comprobante. --}}
+            @if (session('error'))
+                <div class="admin-aviso admin-aviso--error" role="alert">
+                    {{ session('error') }}
+                </div>
+            @endif
         </div>
 
         @if ($errors->any())
@@ -91,6 +124,31 @@
         @yield('contenido')
     </main>
 </div>
+
+{{--
+    CONFIRMACIÓN DE ACCIONES DESTRUCTIVAS
+
+    Uno solo para todo el panel. Cualquier formulario con `data-confirmar="…"`
+    pasa por aquí antes de enviarse. Sustituye al `confirm()` del navegador,
+    que no se puede estilar y que varios navegadores dejan silenciar con una
+    casilla que el usuario marca sin querer.
+
+    Si el navegador no soportara <dialog>, el formulario se envía sin
+    preguntar: nunca se bloquea una acción por no poder mostrar el aviso.
+--}}
+<dialog class="admin-dialogo" data-confirmacion aria-labelledby="titulo-confirmacion">
+    <form method="dialog">
+        <h2 id="titulo-confirmacion">
+            <i data-lucide="triangle-alert" aria-hidden="true"></i>
+            ¿Seguro?
+        </h2>
+        <p class="admin-dialogo__resumen" data-confirmacion-texto></p>
+        <div class="admin-dialogo__acciones">
+            <button type="button" class="boton boton--peligro" data-confirmacion-aceptar>Sí, continuar</button>
+            <button type="button" class="boton boton--secundario" data-confirmacion-cancelar>Cancelar</button>
+        </div>
+    </form>
+</dialog>
 
 </body>
 </html>

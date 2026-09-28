@@ -138,7 +138,7 @@
                 @can('eliminar', $fondo)
                     <form method="POST"
                           action="{{ route('admin.fondos.eliminar', $fondo) }}"
-                          onsubmit="return confirm('Se va a borrar «{{ $fondo->nombre }}» y sus imágenes. Esta acción no se puede deshacer. ¿Continuar?');">
+                          data-confirmar="Se va a borrar «{{ $fondo->nombre }}» y sus imágenes. Esta acción no se puede deshacer.">
                         @csrf
                         @method('DELETE')
                         <button type="submit" class="boton boton--peligro">Borrar este borrador</button>

@@ -11,6 +11,15 @@
 
 <main class="login-pantalla">
     <div class="login-caja">
+        {{-- Se reconoce la marca antes de leer nada: es la primera pantalla de
+             quien administra, y llegar a un formulario desnudo en un dominio
+             que pide contraseña se parece demasiado a una suplantación. --}}
+        <img class="login-caja__logo"
+             src="/media/logo-comunitarios-oficial.png"
+             alt=""
+             aria-hidden="true"
+             width="52" height="52">
+
         <h1>Panel de Comunitarios</h1>
         <p class="subtitulo">Acceso solo para el equipo de la fundación.</p>
 

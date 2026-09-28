@@ -64,6 +64,7 @@
         <form data-donacion-formulario
               method="POST"
               action="{{ route('donar') }}"
+              enctype="multipart/form-data"
               novalidate
               data-moneda="{{ $moneda }}"
               data-monto-minimo="{{ $montoMinimo }}"
@@ -267,38 +268,49 @@
                         <strong class="don-campo__error" id="error-acepta_terminos" data-campo-error></strong>
 
                         {{-- ── Pago ────────────────────────────────────── --}}
+                        {{--
+                            DOS CANALES.
+
+                            Tarjeta pasa por Mercado Pago y confirma solo. Yape/Plin
+                            es una transferencia directa que una persona del equipo
+                            verifica después: cobra menos comisión y funciona en
+                            ferias con un QR impreso, pero no se confirma sola.
+
+                            Los dos bloques se renderizan en el servidor. `qr.js`
+                            oculta el que no está elegido; sin JavaScript se ven los
+                            dos, que es peor de aspecto pero sigue siendo usable.
+                        --}}
                         <div class="don-pagos">
-                            <button type="submit"
-                                    class="button button-coral"
-                                    data-donacion-enviar
-                                    data-texto-original="Donar con tarjeta">
-                                Donar con tarjeta <i data-lucide="heart-handshake"></i>
-                            </button>
 
-                            {{-- Sellos de confianza. Son lo último que se lee antes
-                                 de pulsar, y es donde se decide si uno se fía. --}}
-                            <p class="don-pagos__medios">
-                                <span><i data-lucide="lock"></i> Pago seguro</span>
-                                <span><i data-lucide="credit-card"></i> Débito y crédito</span>
-                                <span><i data-lucide="shield-check"></i> No guardamos tu tarjeta</span>
-                            </p>
-
-                            {{-- Canal QR: NO está implementado, solo existen los enums
-                                 en PHP. Esto es el aviso, no el canal. El esqueleto de
-                                 clases que usará cuando llegue está comentado en
-                                 app.css, bajo «Canal QR (Yape / Plin)». --}}
-                            <div class="don-proximamente">
-                                <span class="don-proximamente__icono" aria-hidden="true">
-                                    <i data-lucide="smartphone"></i>
-                                </span>
-                                <div>
-                                    <strong>Yape y Plin <span class="pill">PRONTO</span></strong>
-                                    <p>
-                                        Estamos habilitando el pago con QR. Por ahora la donación se
-                                        completa con tarjeta a través de Mercado Pago.
-                                    </p>
-                                </div>
+                            <div class="don-canales" role="group" aria-label="Cómo quieres pagar">
+                                <button type="button" class="don-canal" data-canal="tarjeta" aria-pressed="true">
+                                    <i data-lucide="credit-card" aria-hidden="true"></i>
+                                    <span><strong>Tarjeta</strong>Débito o crédito, se confirma al instante</span>
+                                </button>
+                                <button type="button" class="don-canal" data-canal="qr" aria-pressed="false">
+                                    <i data-lucide="smartphone" aria-hidden="true"></i>
+                                    <span><strong>Yape o Plin</strong>Transfieres y subes tu comprobante</span>
+                                </button>
                             </div>
+
+                            <div data-canal-bloque="tarjeta">
+                                <button type="submit"
+                                        class="button button-coral"
+                                        data-donacion-enviar
+                                        data-texto-original="Donar con tarjeta">
+                                    Donar con tarjeta <i data-lucide="heart-handshake"></i>
+                                </button>
+
+                                {{-- Sellos de confianza. Son lo último que se lee antes
+                                     de pulsar, y es donde se decide si uno se fía. --}}
+                                <p class="don-pagos__medios">
+                                    <span><i data-lucide="lock"></i> Pago seguro</span>
+                                    <span><i data-lucide="credit-card"></i> Débito y crédito</span>
+                                    <span><i data-lucide="shield-check"></i> No guardamos tu tarjeta</span>
+                                </p>
+                            </div>
+
+                            @include('publico.componentes.pago-qr')
                         </div>
                     </section>
                 </div>

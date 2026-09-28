@@ -13,6 +13,7 @@ import { iniciarDashboard } from './modules/dashboard.js';
 import { iniciarDonacion } from './modules/donacion.js';
 import { pintarIconos } from './modules/iconos.js';
 import { iniciarProgreso } from './modules/progreso.js';
+import { iniciarQr } from './modules/qr.js';
 import { iniciarResultado } from './modules/resultado.js';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -21,6 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
     pintarIconos();
 
     iniciarDonacion();
+    iniciarQr();
     iniciarResultado();
     iniciarDashboard();
 

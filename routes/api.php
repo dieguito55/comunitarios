@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Donaciones\CrearDonacionController;
+use App\Http\Controllers\Donaciones\CrearDonacionQrController;
 use App\Http\Controllers\Donaciones\ReconciliarDonacionController;
 use App\Http\Controllers\Publico\DashboardController;
 use App\Http\Controllers\Webhooks\WebhookMercadoPagoController;
@@ -37,6 +38,15 @@ Route::prefix('donaciones')
         Route::post('/mercadopago', CrearDonacionController::class)
             ->middleware('throttle:donaciones')
             ->name('mercadopago.crear');
+
+        /*
+        | Canal QR (Yape/Plin). Registra la donacion PENDIENTE con su
+        | comprobante; no confirma nada. El mismo throttle que el de tarjeta:
+        | aqui ademas se suben archivos.
+        */
+        Route::post('/qr', CrearDonacionQrController::class)
+            ->middleware('throttle:donaciones')
+            ->name('qr.crear');
 
         /*
         | Red de seguridad 2. La llama el navegador al volver del checkout y

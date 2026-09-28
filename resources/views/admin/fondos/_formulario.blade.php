@@ -1,4 +1,18 @@
-{{-- Campos compartidos por el alta y la edición de un fondo. --}}
+{{--
+    Campos compartidos por el alta y la edición de un fondo.
+
+    AGRUPADOS POR LO QUE SIGNIFICAN, no en una lista plana. Son catorce campos
+    y en lista corrida es donde más se equivoca quien los rellena: no queda
+    claro qué se está decidiendo en cada tramo. Con títulos, cada bloque
+    responde a una pregunta —cómo se llama, qué lee el donante, cuánto y
+    cuándo, cómo se ve— y el error de meter una cosa en el sitio de otra deja
+    de ser fácil.
+--}}
+
+<section class="admin-seccion">
+    <h2>Identidad del fondo</h2>
+    <p>Cómo se llama y con qué dirección se le enlaza. El slug aparece en la URL pública.</p>
+    <div class="admin-campos">
 
 @include('admin.partials.campo', [
     'nombre' => 'nombre',
@@ -21,6 +35,13 @@
     'atributos' => ['maxlength' => '160'],
 ])
 
+    </div>
+</section>
+
+<section class="admin-seccion">
+    <h2>Contenido público</h2>
+    <p>Lo que lee quien está a punto de donar. El resumen sale en el selector del formulario y en la portada.</p>
+    <div class="admin-campos">
 @include('admin.partials.campo', [
     'nombre' => 'resumen',
     'etiqueta' => 'Resumen',
@@ -40,6 +61,13 @@
     'atributos' => ['rows' => '10'],
 ])
 
+    </div>
+</section>
+
+<section class="admin-seccion">
+    <h2>Meta y fechas</h2>
+    <p>Sin meta no se dibuja la barra de progreso: se muestra solo lo recaudado, que es lo correcto mientras no haya una cifra acordada.</p>
+    <div class="admin-campos">
 @include('admin.partials.campo', [
     'nombre' => 'meta',
     'etiqueta' => 'Meta de recaudación',
@@ -76,6 +104,13 @@
     ])
 </div>
 
+    </div>
+</section>
+
+<section class="admin-seccion">
+    <h2>Presentación y medios</h2>
+    <p>El color de la marca del fondo, su orden en el listado y las imágenes.</p>
+    <div class="admin-campos">
 {{-- Selector de color: son NOMBRES de token de la paleta, no colores sueltos.
      El CSS traduce cada uno a su var(--token). --}}
 <fieldset class="campo @error('color_token') campo--error @enderror">
@@ -127,3 +162,5 @@
     'ayuda' => 'JPG, PNG o WEBP. Mínimo 1200×630 píxeles (es la imagen que se ve al compartir el fondo) y máximo 4 MB. Si pesa más, comprímela antes de subirla.',
     'atributos' => ['accept' => 'image/jpeg,image/png,image/webp'],
 ])
+    </div>
+</section>
